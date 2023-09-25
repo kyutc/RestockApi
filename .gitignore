@@ -1,0 +1,6 @@
+/vendor/
+/log/
+.idea
+private.key
+composer.phar
+config.php
