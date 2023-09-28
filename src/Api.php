@@ -15,7 +15,7 @@ class Api implements MiddlewareInterface
      * Used to validate an unauthenticated API access token.
      */
 
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface{
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
         $token = $request->getHeader('X-RestockApiToken');
 
         if (count($token) > 0) {
