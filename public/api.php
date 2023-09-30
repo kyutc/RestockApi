@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 require '../vendor/autoload.php';
 // TODO: Use a config library instead?
@@ -18,7 +20,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-// TODO: Make the namespace here less bad
 use Restock\Middleware\Auth\Api;
 use Restock\Middleware\Auth\User;
 use Restock\Db\Register;
@@ -29,7 +30,12 @@ $json_formatter = new JsonFormatter();
 $booboo = new League\BooBoo\BooBoo([$json_formatter]);
 $booboo->treatErrorsAsExceptions($config['debug']);
 $logger = new Logger("Restock");
-$logger->pushHandler(new StreamHandler("../log/error.log", $config['debug'] ? Logger::DEBUG : Logger::ERROR));
+$logger->pushHandler(
+    new StreamHandler(
+        "../log/error.log",
+        $config['debug'] ? Logger::DEBUG : Logger::ERROR
+    )
+);
 $booboo->pushHandler(new League\BooBoo\Handler\LogHandler($logger));
 
 try {
@@ -45,13 +51,19 @@ if ($config['debug']) {
     $booboo->setErrorPageFormatter($json_formatter);
 }
 
-$db = new \PDO("mysql:host=" . $config['database']['host'] . ";" .
+$db = new \PDO(
+    "mysql:host=" . $config['database']['host'] . ";" .
     "dbname=" . $config['database']['database'] . ";charset=utf8mb4",
     $config['database']['username'], $config['database']['password'],
-    [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+    [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+);
 
 $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
-    $_SERVER, $_GET, $_POST, $_COOKIE, $_FILES
+    $_SERVER,
+    $_GET,
+    $_POST,
+    $_COOKIE,
+    $_FILES
 );
 
 $responseFactory = new Laminas\Diactoros\ResponseFactory();
@@ -62,7 +74,7 @@ $container->add(Restock\Controller\Api::class)->addArgument($reg);
 $container->add(Register::class);
 
 // Require only a supported content-type to be requested. Right now that means only JSON.
-switch($request->getHeader('Accept')[0]) {
+switch ($request->getHeader('Accept')[0]) {
     case "application/json":
         $strategy = (new League\Route\Strategy\JsonStrategy($responseFactory));
         break;
@@ -78,7 +90,7 @@ switch($request->getHeader('Accept')[0]) {
 }
 
 $strategy->setContainer($container);
-$router = (new League\Route\Router)->setStrategy($strategy);
+$router = (new League\Route\Router())->setStrategy($strategy);
 
 $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 
@@ -87,7 +99,6 @@ $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 // These routes can be cleaned up by creating a proper organisation of the functions
 // into separate files.
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-
     $route->map('GET', '/login', [Controller\Api::class, 'userLogin']);
     $route->map('POST', '/register', [Restock\Controller\Api::class, 'registerNewUser']);
 
@@ -105,5 +116,5 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
 
 
 $response = $router->dispatch($request);
-(new Laminas\HttpHandlerRunner\Emitter\SapiEmitter)->emit($response);
+(new Laminas\HttpHandlerRunner\Emitter\SapiEmitter())->emit($response);
 
