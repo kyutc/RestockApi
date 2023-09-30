@@ -44,9 +44,9 @@ if ($config['debug']) {
     $booboo->setErrorPageFormatter($json_formatter);
 }
 
-$key = 'rVgaJBspaidgs7TQmjfzbuOsy4ynKbSbko7FSmBoNX8=';
-$db = new \PDO("mysql:host=localhost;dbname=restock;charset=utf8mb4",
-    'restock', 'knoblauch',
+$db = new \PDO("mysql:host=" . $config['database']['host'] . ";" .
+    "dbname=" . $config['database']['database'] . ";charset=utf8mb4",
+    $config['database']['username'], $config['database']['password'],
     [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
 
 $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
