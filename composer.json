@@ -5,7 +5,8 @@
         "laminas/laminas-httphandlerrunner": "^2.9",
         "league/oauth2-server": "^8.5",
         "league/booboo": "^2.1",
-        "monolog/monolog": "^2.9"
+        "monolog/monolog": "^2.9",
+        "ext-pdo": "*"
     },
     "autoload": {
         "psr-4": {
