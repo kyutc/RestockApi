@@ -6,12 +6,14 @@
         "league/oauth2-server": "^8.5",
         "league/booboo": "^2.1",
         "monolog/monolog": "^2.9",
-        "ext-pdo": "*"
+        "ext-pdo": "*",
+        "league/container": "^4.2"
     },
     "autoload": {
         "psr-4": {
             "Restock\\Middleware\\Auth\\":  "src/",
-            "Restock\\Db\\":  "src/"
+            "Restock\\Db\\":  "src/",
+            "Restock\\Controller\\": "src/Restock/Controller/"
         }
     }
 }

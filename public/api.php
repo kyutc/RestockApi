@@ -22,6 +22,7 @@ use Monolog\Handler\StreamHandler;
 use Restock\Middleware\Auth\Api;
 use Restock\Middleware\Auth\User;
 use Restock\Db\Register;
+use Restock\Controller;
 
 // Error handler and logger.
 $json_formatter = new JsonFormatter();
@@ -54,11 +55,15 @@ $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
 );
 
 $responseFactory = new Laminas\Diactoros\ResponseFactory();
+$container = new League\Container\Container;
+
+$container->add(Restock\Controller\Api::class)->addArgument(new Register($db));
+$container->add(Register::class);
 
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch($request->getHeader('Accept')[0]) {
     case "application/json":
-        $strategy = new League\Route\Strategy\JsonStrategy($responseFactory);
+        $strategy = (new League\Route\Strategy\JsonStrategy($responseFactory))->setContainer($container);
         break;
     case "text/html":
     case "application/xhtml+xml":
@@ -81,108 +86,17 @@ $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 // into separate files.
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
 
-    // User login
-    $route->map('GET', '/login', function (ServerRequestInterface $request): ResponseInterface {
-        global $db;
+    $route->map('GET', '/login', [Controller\Api::class, 'userLogin']);
+    $route->map('POST', '/register', [Restock\Controller\Api::class, 'registerNewUser']);
 
-        // TODO: Rate limiting
-        // TODO: Token limiting ex. 10 before older tokens get replaced? Or allow no more than 1 token per user.
-
-        $username = $request->getQueryParams()['username'];
-        $password = $request->getQueryParams()['password'];
-
-        if (!is_string($username) || !is_string($password)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Invalid username or password.'],
-                400
-            );
-        }
-
-        $reg = new \Restock\Db\Register($db);
-
-        $token = '';
-        $result = $reg->Login($username, $password, $token);
-
-        if ($result) {
-            return new JsonResponse([
-                'result' => 'success',
-                'token' => $token],
-                200
-            );
-        }
-
-        return new JsonResponse([
-            'result' => 'error',
-            'message' => 'Invalid username or password.'],
-            400
-        );
-    });
-
-    // User registration
-    $route->map('POST', '/register', function (ServerRequestInterface $request): ResponseInterface {
-        global $db; // Improper DI
-
-        // TODO: Rate limiting and captcha.
-
-        // TODO: Use tools instead of manually checking user input and creating errors
-        $username = $request->getParsedBody()['username'];
-        $password = $request->getParsedBody()['password'];
-
-        // Consider: mb_strlen and is varchar/other data type multibyte aware in db?
-        // TODO: Limit charset of username to A-Z, a-z, 0-9, -, _
-        if (!is_string($username) || strlen($username) < 3 || strlen($username) > 30) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Username must be between 3 and 30 characters.'],
-                400
-            );
-        }
-
-        if (!is_string($password) || strlen($password) < 8) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Password must be 8 or more characters.'],
-                400
-            );
-        }
-
-        $reg = new \Restock\Db\Register($db);
-        $reg->CreateAccount($username, $password);
-
-        return new \Laminas\Diactoros\Response\JsonResponse(['result' => 'success'], 200);
-    });
-
-    // Username availability checking
     // TODO: Mutable path with user_id included?
     // Or use a dedicated path rather than a HEAD request?
-    $route->map('HEAD', '/user/{username:username}', function (ServerRequestInterface $request, array $args): ResponseInterface {
-        global $db;
-
-        $reg = new Register($db);
-
-        if ($reg->CheckUsernameAvailability($args['username'])) {
-            return new JsonResponse([],404); // Username is available
-        }
-
-        return new JsonResponse([],200); // Username is not available
-    });
-
+    $route->map('HEAD', '/user/{username:username}', [Restock\Controller\Api::class, 'checkUsernameAvailable']);
 })->middleware(new \Restock\Middleware\Auth\Api());
 
 // API endpoints which require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-    $route->map('GET', '/', function (ServerRequestInterface $request): array {
-        return [
-            'title'   => 'API',
-            'version' => 1,
-        ];
-    });
-    $route->map('GET', '/authtest', function (ServerRequestInterface $request): array {
-        return [
-            'messsage'   => 'Seeing this means auth is successful',
-        ];
-    });
+    $route->map('GET', '/authtest', [Restock\Controller\Api::class, 'authTest']);
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
     ->middleware(new \Restock\Middleware\Auth\User(new Register($db)));
