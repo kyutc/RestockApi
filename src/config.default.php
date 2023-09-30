@@ -4,3 +4,4 @@ $config['debug'] = false;
 $config['database']['username'] = 'restock';
 $config['database']['password'] = '';
 $config['database']['database'] = 'restock';
+$config['database']['host'] = 'localhost';
