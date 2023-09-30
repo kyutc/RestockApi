@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Restock\Middleware\Auth;
 
@@ -18,7 +20,8 @@ class User implements MiddlewareInterface
 
     private \Restock\Db\Register $reg;
 
-    public function __construct(\Restock\Db\Register $reg) {
+    public function __construct(\Restock\Db\Register $reg)
+    {
         $this->reg = $reg;
     }
 
