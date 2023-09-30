@@ -57,7 +57,8 @@ $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
 $responseFactory = new Laminas\Diactoros\ResponseFactory();
 $container = new League\Container\Container;
 
-$container->add(Restock\Controller\Api::class)->addArgument(new Register($db));
+$reg = new Register($db);
+$container->add(Restock\Controller\Api::class)->addArgument($reg);
 $container->add(Register::class);
 
 // Require only a supported content-type to be requested. Right now that means only JSON.
@@ -99,7 +100,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('GET', '/authtest', [Restock\Controller\Api::class, 'authTest']);
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
-    ->middleware(new \Restock\Middleware\Auth\User(new Register($db)));
+    ->middleware(new \Restock\Middleware\Auth\User($reg));
 
 
 $response = $router->dispatch($request);
