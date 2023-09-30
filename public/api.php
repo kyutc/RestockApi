@@ -64,7 +64,7 @@ $container->add(Register::class);
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch($request->getHeader('Accept')[0]) {
     case "application/json":
-        $strategy = (new League\Route\Strategy\JsonStrategy($responseFactory))->setContainer($container);
+        $strategy = (new League\Route\Strategy\JsonStrategy($responseFactory));
         break;
     case "text/html":
     case "application/xhtml+xml":
@@ -77,6 +77,7 @@ switch($request->getHeader('Accept')[0]) {
         die("Unsupported content-type.");
 }
 
+$strategy->setContainer($container);
 $router = (new League\Route\Router)->setStrategy($strategy);
 
 $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
