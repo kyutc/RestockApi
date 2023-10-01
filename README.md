@@ -33,8 +33,13 @@ The software does not yet have an update path. The database will either be clobb
 Example config. Note: HTTPS is *mandatory* in a production environment.
 ```nginx
 server {
-    listen 80;
+    listen      80;
     listen [::]:80;
+    listen      443 ssl;
+    listen [::]:443 ssl;
+    ssl_certificate     ssl/api.cpsc4900.local.crt;
+    ssl_certificate_key ssl/api.cpsc4900.local.key;
+
     server_name api.cpsc4900.local;
 
     root /var/www/api.cpsc4900.local/api/v1/public;
@@ -51,6 +56,27 @@ server {
         fastcgi_pass unix:/run/php/php-fpm.sock;
     }
 }
+```
+
+A self-signed certificate for local testing may be generated like so:
+```bash
+openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -sha256 -days 3650 -nodes -x509 \
+    -keyout api.cpsc4900.local.key -out api.cpsc4900.local.crt -config <(cat <<-EOF
+    [ req ]
+    distinguished_name = dn
+    x509_extensions = san
+    prompt = no
+    
+    [ dn ]
+    CN = api.cpsc4900.local
+    
+    [ san ]
+    subjectAltName = @sans
+    
+    [ sans ]
+    DNS.1 = api.cpsc4900.local
+EOF
+)
 ```
 
 ### API Config
