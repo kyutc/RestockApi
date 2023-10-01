@@ -83,10 +83,13 @@ switch ($request->getHeader('Accept')[0]) {
     case "text/xml":
     case "application/xml":
         // Should other content types be supported? Probably not.
-        die("Unsupported content-type.");
     default:
         // Any other request will be treated as unsupported.
-        die("Unsupported content-type.");
+        http_response_code(406);
+        die(
+            "Unsupported content-type. Acceptable types are:\n" .
+            "application/json"
+        );
 }
 
 $strategy->setContainer($container);
