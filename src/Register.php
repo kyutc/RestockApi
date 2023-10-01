@@ -6,7 +6,6 @@ namespace Restock\Db;
 
 class Register
 {
-    // This class should probably be modified to include other uses
     private \PDO $db;
 
     public function __construct(\PDO $db)
@@ -42,6 +41,9 @@ class Register
     // Other attributes may be added later, ex. email, if desired.
     public function CreateAccount(string $username, string $password): void
     {
+        // Note: There is a mild race condition here.
+        // If the client checks availability of a username and then creates an account with a name which was taken
+        // within that time, this query will fail. Also, it'd be smart to implement proper error reporting in general.
         $query = $this->db->prepare('INSERT INTO `user` (`name`, `password`) VALUES (?, ?)');
         $password_hash = $this->CreatePasswordHash($password);
         $query->execute([$username, $password_hash]);
@@ -58,13 +60,21 @@ class Register
         if ($this->ValidatePasswordHash($password, $password_hash)) {
             $token = $this->CreateUserApiToken($user_id);
             $query = $this->db->prepare(
-                'INSERT INTO `apiauth` (`user_id`, `token`, `create_date`, `last_use_date`) VALUES (?, ?, NOW(), NOW())'
+                'INSERT INTO `apiauth` (`user_id`, `token`, `create_date`, `last_use_date`)' .
+                'VALUES (?, ?, NOW(), NOW())'
             );
             $query->execute([$user_id, $token]);
             return true;
         }
 
         return false;
+    }
+
+    public function Logout(string $token): bool
+    {
+        $query = $this->db->prepare('DELETE FROM `apiauth` WHERE `token` = ?');
+        $query->execute([$token]);
+        return $query->rowCount() == 1;
     }
 
     public function CheckUsernameAvailability(string $username): bool

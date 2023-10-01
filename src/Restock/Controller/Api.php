@@ -71,15 +71,15 @@ class Api
         // TODO: Rate limiting
         // TODO: Token limiting ex. 10 before older tokens get replaced? Or allow no more than 1 token per user.
 
-        $username = $request->getQueryParams()['username'];
-        $password = $request->getQueryParams()['password'];
+        $username = $request->getParsedBody()['username'];
+        $password = $request->getParsedBody()['password'];
 
         if (!is_string($username) || !is_string($password)) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'Invalid username or password.'
             ],
-                400
+                401
             );
         }
 
@@ -91,7 +91,7 @@ class Api
                 'result' => 'success',
                 'token' => $token
             ],
-                200
+                201
             );
         }
 
@@ -99,7 +99,28 @@ class Api
             'result' => 'error',
             'message' => 'Invalid username or password.'
         ],
-            400
+            401
         );
+    }
+
+    public function userLogout(ServerRequestInterface $request): ResponseInterface
+    {
+        $token = $request->getHeader('X-RestockUserApiToken')[0];
+
+        if ($this->reg->Logout($token)) {
+            return new JsonResponse([
+                'result' => 'success',
+                'message' => 'You have been logged out.'
+            ],
+                200
+            );
+        } else {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Unknown error.'
+            ],
+                500
+            );
+        }
     }
 }

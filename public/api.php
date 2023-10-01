@@ -102,8 +102,8 @@ $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 // These routes can be cleaned up by creating a proper organisation of the functions
 // into separate files.
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-    $route->map('GET', '/login', [Controller\Api::class, 'userLogin']);
-    $route->map('POST', '/register', [Restock\Controller\Api::class, 'registerNewUser']);
+    $route->map('POST', '/session', [Controller\Api::class, 'userLogin']);
+    $route->map('POST', '/user', [Restock\Controller\Api::class, 'registerNewUser']);
 
     // TODO: Mutable path with user_id included?
     // Or use a dedicated path rather than a HEAD request?
@@ -113,6 +113,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
 // API endpoints which require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('GET', '/authtest', [Restock\Controller\Api::class, 'authTest']);
+    $route->map('DELETE', '/session', [Controller\Api::class, 'userLogout']);
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
     ->middleware(new \Restock\Middleware\Auth\User($reg));
