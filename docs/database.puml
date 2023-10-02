@@ -2,96 +2,72 @@
 
 header PantrySync.pro
 right footer Let that sync in...
-title Entity Data
+title Database Structure
 
-	entity User {
-    	*id : int <<PK>>
-    	*email : string <<Unique>>
-    	*password : string
-	}
+    entity User {
+        *id : int <<PK>>
+        *name : string
+        *email : string <<Unique>>
+        *password : string
+    }
 
-	entity Group {
-    	*id : UID <<PK>>
-    	*user_manager : int <<FK>>
-    	*name : string
-	}
-	note right of Group
-    	User manager adds
-    	group members
-	end note
+    entity Group {
+        *id : int <<PK>>
+        *name : string
+    }
 
-	entity GroupMember {
-    	*group_id : UID <<FK>>
-    	*user_id : int <<FK>>
-	}
+    entity GroupMember {
+        *id : int <<PK>>
+        *group_id : int <<FK>>
+        *user_id : int <<FK>>
+        ' Role can be expanded to something dynamic rather than an enum
+        *role : enum
+    }
 
+    entity Item {
+        *id: int <<PK>>
+        *group_id : <<FK>>
+        *name : string
+        *description: string
+        *category : string
+        ' What are stock_quantity, shop_quantity, and quantity?
+        *quantity : int
 
-	entity Item {
-    	*group_id : <<FK>>
-    	*name : string
-    	*category : string
-   	 
-    	*stock_quantity : float
-    	*minimum_threshold : int
-    	*auto_add_to_shoppng_list : bool
-    	*notification_date : date
+        *minimum_threshold : int
+        *auto_add_to_shopping_list : bool
+    }
 
-    	*shop_quantity : float
-    	*auto_replenish_from_shopping_list
-
-    	*quantity : int
-	}
-	note left of Item::stock_quantity
-    	Fractions may be easier
-    	for users to work with
-	end note
-
-	entity ItemDescription {
-    	*group_id : UID <<FK>>
-    	*item_id : string <<FK>>
-    	*description : string
-	}
-
-	entity ItemNotification {
-    	*group_id : UID <<FK>>
-    	*item_name : string <<FK>>
-    	*message : string
-	}
-
-	entity ItemHistory {
-    	*group_id : UID <<FK>>
-    	*item_id : string <<FK>>
-    	*name : string
-    	*last_used : datetime
-	}
-
-	entity Recipes {
-    	*group_id : UID <<FK>>
-    	*name : string
-    	*ingredients : text
-    	*instructions : text
-	}
-
-	note right of Recipes::ingredients
-    	A delimitted list
-    	of ingredient names
-    	and count.
-	end note
-
+    entity Recipes {
+        *id : int <<PK>>
+        *user_id : int <<FK>>
+        *name : string
+        /' Including ingredients here for the purpose of identifying possible recipes for given ingredients would
+           require a more advanced structure.
+        '/
+        *instructions : text
+    }
     
-	entity ActionLog {
-    	*group_id : UID <<FK>>
-    	*message : string
-    	*timestamp : datetime
-	}
+    entity ActionLog {
+        ' Is this an audit log?
+        *id : int <<PK>>
+        *group_id : int <<FK>>
+        *message : string
+        *timestamp : datetime
+    }
 
-	User }|--|| Group
-	Group ||--o{ GroupMember
-	Group ||--o{ Item
-	Item ||--o| ItemDescription
-	Item ||--o| ItemNotification
-	Item ||--o{ ItemHistory
-	Group ||--o{ Recipes
-	Group ||--o{ ActionLog
+    entity Session {
+        *id : int <<PK>>
+        *user_id : int <<FK>>
+        *token : string
+        *create_date : datetime
+        *last_use_date : datetime
+    }
+
+    User  ||--o{ GroupMember
+    User  ||--o{ Recipes
+    User  ||--o{ Session
+    Group ||--o{ ActionLog
+    Group ||--o{ GroupMember
+    Group ||--o{ Item
 
 @enduml
