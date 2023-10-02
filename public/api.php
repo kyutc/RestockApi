@@ -123,7 +123,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
 
     $route->map(
         'GET',
-        '/group/{group_id:number}/member/{member_id:number}',
+        '/groupmember/{member_id:number}',
         [Restock\Controller\Api::class, 'getGroupMemberDetails']
     );
     $route->map('POST', '/group/{group_id:number}/addmember', [Restock\Controller\Api::class, 'addGroupMember']);
@@ -134,7 +134,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     );
     $route->map(
         'DELETE',
-        '/groupmember/{group_id:number}/member/{member_id:number}',
+        '/groupmember/{member_id:number}',
         [Restock\Controller\Api::class, 'deleteGroupMember']
     );
 })
