@@ -6,6 +6,8 @@ namespace Restock\Db;
 
 class Register
 {
+    // This class should probably be renamed and/or restructured as it's taking on multiple duties.
+    // "Account" or "UserAccount" would make sense.
     private \PDO $db;
 
     public function __construct(\PDO $db)
@@ -53,6 +55,11 @@ class Register
     {
         $query = $this->db->prepare('SELECT `id`, `password` FROM `user` WHERE `name` = ?');
         $query->execute([$username]);
+
+        if ($query->rowCount() !== 1) {
+            return false;
+        }
+
         $result = $query->fetch(\PDO::FETCH_ASSOC);
         $user_id = (string)$result['id'] ?? '';
         $password_hash = $result['password'] ?? '';
