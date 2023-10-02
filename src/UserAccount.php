@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Restock\Db;
 
-class Register
+class UserAccount
 {
-    // This class should probably be renamed and/or restructured as it's taking on multiple duties.
-    // "Account" or "UserAccount" would make sense.
     private \PDO $db;
 
     public function __construct(\PDO $db)

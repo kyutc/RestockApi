@@ -22,7 +22,7 @@ use Monolog\Handler\StreamHandler;
 
 use Restock\Middleware\Auth\Api;
 use Restock\Middleware\Auth\User;
-use Restock\Db\Register;
+use Restock\Db\UserAccount;
 use Restock\Controller;
 
 // Error handler and logger.
@@ -70,9 +70,9 @@ $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
 $responseFactory = new Laminas\Diactoros\ResponseFactory();
 $container = new League\Container\Container;
 
-$reg = new Register($db);
-$container->add(Restock\Controller\Api::class)->addArgument($reg);
-$container->add(Register::class);
+$userAccount = new UserAccount($db);
+$container->add(Restock\Controller\Api::class)->addArgument($userAccount);
+$container->add(UserAccount::class);
 
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch ($request->getHeader('Accept')[0]) {
@@ -139,7 +139,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     );
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
-    ->middleware(new \Restock\Middleware\Auth\User($reg));
+    ->middleware(new \Restock\Middleware\Auth\User($userAccount));
 
 
 $response = $router->dispatch($request);

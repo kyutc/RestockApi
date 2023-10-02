@@ -10,11 +10,11 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class Api
 {
-    private \Restock\Db\Register $reg;
+    private \Restock\Db\UserAccount $userAccount;
 
-    public function __construct(\Restock\Db\Register $reg)
+    public function __construct(\Restock\Db\UserAccount $userAccount)
     {
-        $this->reg = $reg;
+        $this->userAccount = $userAccount;
     }
 
     public function authTest(ServerRequestInterface $request): ResponseInterface
@@ -26,7 +26,7 @@ class Api
 
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        if ($this->reg->CheckUsernameAvailability($args['username'])) {
+        if ($this->userAccount->CheckUsernameAvailability($args['username'])) {
             return new JsonResponse([], 404); // Username is available
         }
 
@@ -61,7 +61,7 @@ class Api
             );
         }
 
-        $this->reg->CreateAccount($username, $password);
+        $this->userAccount->CreateAccount($username, $password);
 
         return new \Laminas\Diactoros\Response\JsonResponse(['result' => 'success'], 200);
     }
@@ -84,7 +84,7 @@ class Api
         }
 
         $token = '';
-        $result = $this->reg->Login($username, $password, $token);
+        $result = $this->userAccount->Login($username, $password, $token);
 
         if ($result) {
             return new JsonResponse([
@@ -107,7 +107,7 @@ class Api
     {
         $token = $request->getHeader('X-RestockUserApiToken')[0];
 
-        if ($this->reg->Logout($token)) {
+        if ($this->userAccount->Logout($token)) {
             return new JsonResponse([
                 'result' => 'success',
                 'message' => 'You have been logged out.'

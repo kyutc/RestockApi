@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Laminas\Diactoros\Response\RedirectResponse;
-use Restock\Db\Register;
+use Restock\Db\UserAccount;
 
 class User implements MiddlewareInterface
 {
@@ -18,18 +18,18 @@ class User implements MiddlewareInterface
      * Used to authenticate and grant permissions to users who have logged in.
      */
 
-    private \Restock\Db\Register $reg;
+    private \Restock\Db\UserAccount $userAccount;
 
-    public function __construct(\Restock\Db\Register $reg)
+    public function __construct(\Restock\Db\UserAccount $userAccount)
     {
-        $this->reg = $reg;
+        $this->userAccount = $userAccount;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $token = $request->getHeader('X-RestockUserApiToken')[0] ?? '';
 
-        if ($this->reg->ValidateUserApiToken($token)) {
+        if ($this->userAccount->ValidateUserApiToken($token)) {
             return $handler->handle($request);
         }
 
