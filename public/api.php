@@ -51,6 +51,7 @@ if ($config['debug']) {
     $booboo->setErrorPageFormatter($json_formatter);
 }
 
+// Consider: Use a query builder instead?
 $db = new \PDO(
     "mysql:host=" . $config['database']['host'] . ";" .
     "dbname=" . $config['database']['database'] . ";charset=utf8mb4",
@@ -97,23 +98,45 @@ $router = (new League\Route\Router())->setStrategy($strategy);
 
 $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 
-// This group is for unauthenticated users (not logged in)
-// Intended only for two functions: logging in, and creating an account.
-// These routes can be cleaned up by creating a proper organisation of the functions
-// into separate files.
+// API endpoints which do not require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('POST', '/session', [Controller\Api::class, 'userLogin']);
     $route->map('POST', '/user', [Restock\Controller\Api::class, 'registerNewUser']);
 
-    // TODO: Mutable path with user_id included?
-    // Or use a dedicated path rather than a HEAD request?
     $route->map('HEAD', '/user/{username:username}', [Restock\Controller\Api::class, 'checkUsernameAvailable']);
 })->middleware(new \Restock\Middleware\Auth\Api());
 
 // API endpoints which require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('GET', '/authtest', [Restock\Controller\Api::class, 'authTest']);
+
     $route->map('DELETE', '/session', [Controller\Api::class, 'userLogout']);
+
+    $route->map('GET', '/user/{user_id:number}', [Restock\Controller\Api::class, 'getUserAccount']);
+    $route->map('PUT', '/user/{user_id:number}', [Restock\Controller\Api::class, 'updateUserAccount']);
+    $route->map('DELETE', '/user/{user_id:number}', [Restock\Controller\Api::class, 'deleteUserAccount']);
+
+    $route->map('GET', '/group/{group_id:number}', [Restock\Controller\Api::class, 'getGroupDetails']);
+    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\Api::class, 'createGroup']);
+    $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\Api::class, 'updateGroup']);
+    $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\Api::class, 'deleteGroup']);
+
+    $route->map(
+        'GET',
+        '/group/{group_id:number}/member/{member_id:number}',
+        [Restock\Controller\Api::class, 'getGroupMemberDetails']
+    );
+    $route->map('POST', '/group/{group_id:number}/addmember', [Restock\Controller\Api::class, 'addGroupMember']);
+    $route->map(
+        'PUT',
+        '/groupmember/{member_id:number}',
+        [Restock\Controller\Api::class, 'updateGroupMember']
+    );
+    $route->map(
+        'DELETE',
+        '/groupmember/{group_id:number}/member/{member_id:number}',
+        [Restock\Controller\Api::class, 'deleteGroupMember']
+    );
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
     ->middleware(new \Restock\Middleware\Auth\User($reg));

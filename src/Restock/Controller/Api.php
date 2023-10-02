@@ -123,4 +123,59 @@ class Api
             );
         }
     }
+
+    public function getUserAccount(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function updateUserAccount(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function deleteUserAccount(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function getGroupDetails(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function createGroup(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function updateGroup(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function deleteGroup(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function getGroupMemberDetails(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function addGroupMember(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function updateGroupMember(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
+
+    public function deleteGroupMember(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception("Not implemented.");
+    }
 }
