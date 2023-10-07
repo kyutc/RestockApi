@@ -114,14 +114,14 @@ class Api
             ],
                 200
             );
-        } else {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Unknown error.'
-            ],
-                500
-            );
         }
+
+        return new JsonResponse([
+            'result' => 'error',
+            'message' => 'Unknown error.'
+        ],
+            500
+        );
     }
 
     public function getUserAccount(ServerRequestInterface $request): ResponseInterface
@@ -134,9 +134,27 @@ class Api
         throw new \Exception("Not implemented.");
     }
 
-    public function deleteUserAccount(ServerRequestInterface $request): ResponseInterface
+    public function deleteUserAccount(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        $token = $request->getHeader('X-RestockUserApiToken')[0];
+        $user_id = (int)$args['user_id'];
+
+        if ($this->userAccount->DeleteAccount($user_id, $token)) {
+            return new JsonResponse([
+                'result' => 'success',
+                'message' => 'Account has been deleted.'
+            ],
+                200
+            );
+        }
+
+        // See comments in "DeleteAccount" in short: need better auth flow and error checking and reporting flow
+        return new JsonResponse([
+            'result' => 'error',
+            'message' => 'Failed to delete account.'
+        ],
+            500
+        );
     }
 
     public function getGroupDetails(ServerRequestInterface $request): ResponseInterface

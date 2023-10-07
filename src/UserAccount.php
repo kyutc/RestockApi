@@ -49,6 +49,22 @@ class UserAccount
         $query->execute([$username, $password_hash]);
     }
 
+    public function DeleteAccount(int $user_id, string $token): bool
+    {
+        // Mixed concerns, this function shouldn't care about auth.
+        // Auth should be handled elsewhere before this function gets called.
+        // Failure here can be because the user isn't authenticated, the userid is wrong, or the user doesn't have
+        // permission to delete the target user. Will need to expand on these later and provide better errors.
+        // It could be implied that any failure here means it's a permission issue (with current auth flow)
+        $query = $this->db->prepare(
+            'DELETE `user` FROM `user` ' .
+            'JOIN `apiauth` ON `apiauth`.`user_id` = `user`.`id` ' .
+            'WHERE `user`.`id` = ? AND `token` = ?'
+        );
+        $query->execute([$user_id, $token]);
+        return $query->rowCount() > 0;
+    }
+
     public function Login(string $username, string $password, string &$token): bool
     {
         $query = $this->db->prepare('SELECT `id`, `password` FROM `user` WHERE `name` = ?');
