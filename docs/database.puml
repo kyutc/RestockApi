@@ -29,12 +29,22 @@ title Database Structure
         *group_id : <<FK>>
         *name : string
         *description: string
+        ' Category could be an enum
         *category : string
-        ' What are stock_quantity, shop_quantity, and quantity?
-        *quantity : int
+    }
 
+    entity Pantry {
+        *id: int <<PK>>
+        *item_id : <<FK>>
+        *quantity : int
         *minimum_threshold : int
         *auto_add_to_shopping_list : bool
+    }
+
+    entity ShoppingList {
+        *id: int <<PK>>
+        *item_id : <<FK>>
+        *quantity : int
     }
 
     entity Recipes {
@@ -69,5 +79,7 @@ title Database Structure
     Group ||--o{ ActionLog
     Group ||--o{ GroupMember
     Group ||--o{ Item
+    Item  ||--o{ Pantry
+    Item  ||--o{ ShoppingList
 
 @enduml
