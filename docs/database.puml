@@ -45,6 +45,7 @@ title Database Structure
         *id: int <<PK>>
         *item_id : <<FK>>
         *quantity : int
+		*dont_add_to_pantry : bool
     }
 
     entity Recipes {
