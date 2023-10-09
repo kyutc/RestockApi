@@ -310,6 +310,8 @@ This requires configuring PHPStorm to use SFTP (SSH) to transfer the files to a 
 Access Tools→Deployment→Configuration... and click the plus symbol to add a new connection.
 Click "..." next to SSH configuration to add a new SSH login.
 
+Ensure the root path is set to `/var/www/api.cpsc4900.local/v1`.
+
 ![PHPStorm remote deployment configuration step 1](img/remote_deploy_step01.png)
 
 Use the restock account and password. Be sure to click "test connection" to ensure it's working correctly.
