@@ -141,7 +141,7 @@ extension=pdo_mysql
 ```bash
 mysql -uroot -p
 ```
-```mariadb
+```sql
 create database restock;
 create user 'restock'@'%' identified by 'knoblauch';
 grant all privileges on restock.* to 'restock'@'%';
