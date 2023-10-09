@@ -47,8 +47,8 @@ Accessing the BIOS requires pressing a specific key during boot, but the key dep
 I'd recommend downloading the Debian ISO in advance, especially if you don't have a fast Internet connection.
 Note: the DVD installer requires a Bittorrent client to download. I recommend [qBittorrent](https://www.qbittorrent.org/).
 
-* [Net installer (decent connection)](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.1.0-amd64-netinst.iso)
-* [DVD installer (slow connection)](https://cdimage.debian.org/debian-cd/current/amd64/bt-dvd/debian-12.1.0-amd64-DVD-1.iso.torrent)
+* [Net installer (decent connection)](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.2.0-amd64-netinst.iso)
+* [DVD installer (slow connection)](https://cdimage.debian.org/debian-cd/current/amd64/bt-dvd/debian-12.2.0-amd64-DVD-1.iso.torrent)
 
 While other distributions can be used, these instructions assume the latest stable version of x86-64 Debian Linux 12 Bookworm.
 Don't deviate unless you know what you're doing.
