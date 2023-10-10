@@ -4,6 +4,14 @@ While using a VM is optional, it is *highly recommended*.
 Making changes to your host system for the purposes of hosting server infrastructure is likely to do things you don't want.
 It will also allow the development environment to more closely match the production environment, which is also a Linux VM.
 
+# Windows Users Beware!
+
+The curl commands here need **double quotes** rather than single quotes!
+
+Also the URL might need to always be at the *end* of the curl command.
+And multi-line commands *do not work* on Windows, so you'll have to change the commands to always be single line when executing on Windows.
+A multi-line command is one where there is a backslash `\ ` at the end of the line.
+
 # Check virtualisation support
 
 In order to run virtual machines (VMs) your system must be configured to allow virtualisation.
