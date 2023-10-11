@@ -4,14 +4,6 @@ While using a VM is optional, it is *highly recommended*.
 Making changes to your host system for the purposes of hosting server infrastructure is likely to do things you don't want.
 It will also allow the development environment to more closely match the production environment, which is also a Linux VM.
 
-# Windows Users Beware!
-
-The curl commands here need **double quotes** rather than single quotes!
-
-Also the URL might need to always be at the *end* of the curl command.
-And multi-line commands *do not work* on Windows, so you'll have to change the commands to always be single line when executing on Windows.
-A multi-line command is one where there is a backslash `\ ` at the end of the line.
-
 # Check virtualisation support
 
 In order to run virtual machines (VMs) your system must be configured to allow virtualisation.
@@ -340,13 +332,23 @@ Do the same path environment variable thing as before, ensuring you add the `bin
 Run `curl --version` in a *new* command prompt to verify it's working.
 
 Once everything has been deployed to the remote server, run the following to test that it's all working correctly.
-Use `$RANDOM` instead of `%random%` on Linux.
+
+**For Windows**
+```batch
+curl -H "Accept: application/json" ^
+     -H "X-RestockApiToken: anything" ^
+     -H "Host: api.cpsc4900.local" ^
+     http://192.168.122.155/api/v1/user ^
+     -d "username=somebody"%random% ^
+     -d "password=knoblauch"
+```
+**For Linux**
 ```bash
 curl -H 'Accept: application/json' \
      -H 'X-RestockApiToken: anything' \
      -H 'Host: api.cpsc4900.local' \
      http://192.168.122.155/api/v1/user \
-     -d 'username=somebody'%random% \
+     -d 'username=somebody'$RANDOM \
      -d 'password=knoblauch' && echo
 ```
 The output should be:
