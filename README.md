@@ -1,5 +1,15 @@
 # Re(Stock) Backend API
 
+## Contributing
+
+Create a branch named for the concept you are intending to work on.
+See the `database-uml` branch as an example.
+
+**Do not modify code directly on Github.com!**
+This is incorrect and will cause all kinds of problems. Use the Git integration of your IDE.
+
+Merge changes into the master branch only after discussion with the group and testing.
+
 ## Requirements
 
 This list does not account for minimum versions, just the versions being used for development.
