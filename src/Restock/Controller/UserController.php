@@ -8,20 +8,13 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class Api
+class UserController
 {
     private \Restock\Db\UserAccount $userAccount;
 
     public function __construct(\Restock\Db\UserAccount $userAccount)
     {
         $this->userAccount = $userAccount;
-    }
-
-    public function authTest(ServerRequestInterface $request): ResponseInterface
-    {
-        return new JsonResponse([
-            'messsage' => 'Seeing this means auth is successful',
-        ], 200);
     }
 
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
@@ -33,7 +26,7 @@ class Api
         return new JsonResponse([], 200); // Username is not available
     }
 
-    public function registerNewUser(ServerRequestInterface $request): ResponseInterface
+    public function createUser(ServerRequestInterface $request): ResponseInterface
     {
         // TODO: Rate limiting and captcha.
         // TODO: Use tools instead of manually checking user input and creating errors
@@ -124,17 +117,17 @@ class Api
         );
     }
 
-    public function getUserAccount(ServerRequestInterface $request): ResponseInterface
+    public function getUser(ServerRequestInterface $request): ResponseInterface
     {
         throw new \Exception("Not implemented.");
     }
 
-    public function updateUserAccount(ServerRequestInterface $request): ResponseInterface
+    public function updateUser(ServerRequestInterface $request): ResponseInterface
     {
         throw new \Exception("Not implemented.");
     }
 
-    public function deleteUserAccount(ServerRequestInterface $request, array $args): ResponseInterface
+    public function deleteUser(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $token = $request->getHeader('X-RestockUserApiToken')[0];
         $user_id = (int)$args['user_id'];
@@ -155,45 +148,5 @@ class Api
         ],
             500
         );
-    }
-
-    public function getGroupDetails(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function createGroup(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function updateGroup(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function deleteGroup(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function getGroupMemberDetails(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function addGroupMember(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function updateGroupMember(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function deleteGroupMember(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
     }
 }
