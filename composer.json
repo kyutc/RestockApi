@@ -15,5 +15,8 @@
             "Restock\\Db\\":  "src/",
             "Restock\\Controller\\": "src/Restock/Controller/"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10"
     }
 }
