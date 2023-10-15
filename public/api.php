@@ -116,26 +116,26 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('PUT', '/user/{user_id:number}', [Restock\Controller\Api::class, 'updateUserAccount']);
     $route->map('DELETE', '/user/{user_id:number}', [Restock\Controller\Api::class, 'deleteUserAccount']);
 
-    $route->map('GET', '/group/{group_id:number}', [Restock\Controller\Api::class, 'getGroupDetails']);
-    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\Api::class, 'createGroup']);
-    $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\Api::class, 'updateGroup']);
-    $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\Api::class, 'deleteGroup']);
+    $route->map('GET', '/group/{group_id:number}', [Restock\Controller\Group::class, 'getGroupDetails']);
+    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\Group::class, 'createGroup']);
+    $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\Group::class, 'updateGroup']);
+    $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\Group::class, 'deleteGroup']);
 
     $route->map(
         'GET',
-        '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'getGroupMemberDetails']
+        '/group/{group_id:number}/member/{user_id:number}',
+        [Restock\Controller\Group::class, 'getGroupMemberDetails']
     );
-    $route->map('POST', '/group/{group_id:number}/addmember', [Restock\Controller\Api::class, 'addGroupMember']);
+    $route->map('POST', '/group/{group_id:number}/member', [Restock\Controller\Group::class, 'addGroupMember']);
     $route->map(
         'PUT',
-        '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'updateGroupMember']
+        '/group/{group_id:number}/member/{user_id:number}',
+        [Restock\Controller\Group::class, 'updateGroupMember']
     );
     $route->map(
         'DELETE',
-        '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'deleteGroupMember']
+        '/group/{group_id:number}/member/{user_id:number}',
+        [Restock\Controller\Group::class, 'deleteGroupMember']
     );
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
