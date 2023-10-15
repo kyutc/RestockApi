@@ -20,17 +20,16 @@ class Group
         return $this->db->lastInsertId('id');
     }
 
-    public function SetGroupPermission(int $group_id, string $permission): void
+    public function SetGroupMemberRole(int $group_id, string $role): void
     {
-
+        throw new \Exception("Not implemented");
     }
 
     public function DeleteGroup(int $group_id, string $token): bool
     {
+        throw new \Exception("Not implemented");
         $query = $this->db->prepare(
-            'DELETE `group` FROM `group` ' .
-            'JOIN `apiauth` ON `apiauth`.`user_id` = `user`.`id` ' .
-            'WHERE `user`.`id` = ? AND `token` = ?'
+            ''
         );
         $query->execute([$group_id, $token]);
         return $query->rowCount() > 0;

@@ -10,9 +10,9 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class Group
 {
-    private \Restock\Db\Group $group;
+    private \Restock\Group\Group $group;
 
-    public function __construct(\Restock\Db\Group $group)
+    public function __construct(\Restock\Group\Group $group)
     {
         $this->group = $group;
     }

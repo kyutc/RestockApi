@@ -60,6 +60,16 @@ class Permission
         return $this->getGroupRole($user_id, $group_id) == 'owner';
     }
 
+    public function canInviteGroupMember(int $user_id, int $group_id): bool
+    {
+        return $this->getGroupRole($user_id, $group_id) == 'owner';
+    }
+
+    public function canJoinGroup(int $user_id, int $group_id): bool
+    {
+        throw new \Exception("Not implemented");
+    }
+
     public function canAddItem(int $user_id, int $group_id): bool
     {
         return in_array($this->getGroupRole($user_id, $group_id), ['owner', 'editor']);
