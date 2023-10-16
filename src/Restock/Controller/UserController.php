@@ -59,6 +59,11 @@ class UserController
         return new \Laminas\Diactoros\Response\JsonResponse(['result' => 'success'], 200);
     }
 
+    public function editUser(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception('Not implemented.');
+    }
+
     public function userLogin(ServerRequestInterface $request): ResponseInterface
     {
         // TODO: Rate limiting
