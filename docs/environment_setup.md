@@ -13,7 +13,7 @@ Some machines are preconfigured with this option either on or off.
 
 **For Windows**
 
-Open task manager and check Performance→CPU for an item called "Virtualization" saying "Enabled."
+Open task manager and check *Performance→CPU* for an item called "Virtualization" saying "Enabled."
 
 ![Virtualisation enabled in Windows](img/task_manager_virtualisation.png)
 
@@ -254,7 +254,7 @@ This will be a terrible experience for everyone involved and you will be sent to
 Thankfully, JetBrains has documentation for using your Github account here: https://www.jetbrains.com/help/phpstorm/github.html
 
 Once you have git configured you can clone the project and start modifying code.
-From the IDE, Git→Clone and enter the project's git URL: `https://github.com/kyutc/RestockApi.git`.
+From the IDE, *Git→Clone* and enter the project's git URL: `https://github.com/kyutc/RestockApi.git`.
 
 ## Composer
 
@@ -307,7 +307,7 @@ Don't forget to also deploy these new files to the remote server.
 Once you've successfully cloned the project and run `composer install` you can remotely deploy the code to the server.
 This requires configuring PHPStorm to use SFTP (SSH) to transfer the files to a remote location on the server.
 
-Access Tools→Deployment→Configuration... and click the plus symbol to add a new connection.
+Access *Tools→Deployment→Configuration...* and click the plus symbol to add a new connection.
 Click "..." next to SSH configuration to add a new SSH login.
 
 Ensure the root path is set to `/var/www/api.cpsc4900.local/v1`.
@@ -322,7 +322,7 @@ Be sure to set the deployment path to "/".
 
 ![PHPStorm remote deployment configuration step 3](img/remote_deploy_step03.png)
 
-Once done, right click the root directory in the project, "API" in my case, and go to Deployment→Upload to cpsc4900.local.
+Once done, right click the root directory in the project, "API" in my case, and go to *Deployment→Upload to cpsc4900.local*.
 This will take a few moments to upload the entire project to the remote server.
 
 # Test an API request
@@ -332,13 +332,23 @@ Do the same path environment variable thing as before, ensuring you add the `bin
 Run `curl --version` in a *new* command prompt to verify it's working.
 
 Once everything has been deployed to the remote server, run the following to test that it's all working correctly.
-Use `$RANDOM` instead of `%random%` on Linux.
+
+**For Windows**
+```batch
+curl -H "Accept: application/json" ^
+     -H "X-RestockApiToken: anything" ^
+     -H "Host: api.cpsc4900.local" ^
+     http://192.168.122.155/api/v1/user ^
+     -d "username=somebody"%random% ^
+     -d "password=knoblauch"
+```
+**For Linux**
 ```bash
 curl -H 'Accept: application/json' \
      -H 'X-RestockApiToken: anything' \
      -H 'Host: api.cpsc4900.local' \
      http://192.168.122.155/api/v1/user \
-     -d 'username=somebody'%random% \
+     -d 'username=somebody'$RANDOM \
      -d 'password=knoblauch' && echo
 ```
 The output should be:

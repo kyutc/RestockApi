@@ -100,7 +100,7 @@ $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 
 // API endpoints which do not require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-    $route->map('POST', '/session', [Controller\UserController::class, 'userLogin']);
+    $route->map('POST', '/session', [Restock\Controller\UserController::class, 'userLogin']);
     $route->map('POST', '/user', [Restock\Controller\UserController::class, 'createUser']);
 
     $route->map('HEAD', '/user/{username:username}', [Restock\Controller\UserController::class, 'checkUsernameAvailable']);
