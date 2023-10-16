@@ -45,6 +45,15 @@ class UserController
             );
         }
 
+        if ($this->userAccount->CheckUsernameAvailability($username)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Username is already taken.'
+            ],
+                404
+            ); // Username is available
+        }
+
         if (!is_string($password) || strlen($password) < 8) {
             return new JsonResponse([
                 'result' => 'error',
