@@ -100,42 +100,42 @@ $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 
 // API endpoints which do not require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-    $route->map('POST', '/session', [Restock\Controller\Api::class, 'userLogin']);
-    $route->map('POST', '/user', [Restock\Controller\Api::class, 'registerNewUser']);
+    $route->map('POST', '/session', [Controller\UserController::class, 'userLogin']);
+    $route->map('POST', '/user', [Restock\Controller\UserController::class, 'createUser']);
 
-    $route->map('HEAD', '/user/{username:username}', [Restock\Controller\Api::class, 'checkUsernameAvailable']);
+    $route->map('HEAD', '/user/{username:username}', [Restock\Controller\UserController::class, 'checkUsernameAvailable']);
 })->middleware(new \Restock\Middleware\Auth\Api());
 
 // API endpoints which require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-    $route->map('GET', '/authtest', [Restock\Controller\Api::class, 'authTest']);
+    $route->map('GET', '/authtest', [Restock\Controller\UserController::class, 'authTest']);
 
-    $route->map('DELETE', '/session', [Controller\Api::class, 'userLogout']);
+    $route->map('DELETE', '/session', [Controller\UserController::class, 'userLogout']);
 
-    $route->map('GET', '/user/{user_id:number}', [Restock\Controller\Api::class, 'getUserAccount']);
-    $route->map('PUT', '/user/{user_id:number}', [Restock\Controller\Api::class, 'updateUserAccount']);
-    $route->map('DELETE', '/user/{user_id:number}', [Restock\Controller\Api::class, 'deleteUserAccount']);
+    $route->map('GET', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'getUser']);
+    $route->map('PUT', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'updateUser']);
+    $route->map('DELETE', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'deleteUser']);
 
-    $route->map('GET', '/group/{group_id:number}', [Restock\Controller\Api::class, 'getGroupDetails']);
-    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\Api::class, 'createGroup']);
-    $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\Api::class, 'updateGroup']);
-    $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\Api::class, 'deleteGroup']);
+    $route->map('GET', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'getGroupDetails']);
+    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'createGroup']);
+    $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'updateGroup']);
+    $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'deleteGroup']);
 
     $route->map(
         'GET',
         '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'getGroupMemberDetails']
+        [Restock\Controller\UserController::class, 'getGroupMemberDetails']
     );
-    $route->map('POST', '/group/{group_id:number}/addmember', [Restock\Controller\Api::class, 'addGroupMember']);
+    $route->map('POST', '/group/{group_id:number}/addmember', [Restock\Controller\UserController::class, 'addGroupMember']);
     $route->map(
         'PUT',
         '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'updateGroupMember']
+        [Restock\Controller\UserController::class, 'updateGroupMember']
     );
     $route->map(
         'DELETE',
         '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'deleteGroupMember']
+        [Restock\Controller\UserController::class, 'deleteGroupMember']
     );
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
