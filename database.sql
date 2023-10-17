@@ -78,7 +78,7 @@ CREATE TABLE GroupMember (
                              id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
                              group_id INT UNSIGNED NOT NULL,
                              user_id INT UNSIGNED NOT NULL,
-                             role ENUM('tbd') NOT NULL,
+                             role ENUM('Member', 'Admin') NOT NULL,
     -- other group member attributes...
                              FOREIGN KEY (group_id) REFERENCES `Group`(group_id) ON DELETE CASCADE ON UPDATE CASCADE,
                              FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE
