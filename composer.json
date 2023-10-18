@@ -7,7 +7,9 @@
         "league/booboo": "^2.1",
         "monolog/monolog": "^2.9",
         "ext-pdo": "*",
-        "league/container": "^4.2"
+        "league/container": "^4.2",
+        "doctrine/orm": "^2.16",
+        "symfony/cache": "^6.3"
     },
     "autoload": {
         "psr-4": {

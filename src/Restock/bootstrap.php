@@ -11,6 +11,10 @@ require '../vendor/autoload.php';
 require '../src/config.default.php';
 require '../src/config.php';
 
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\ORMSetup;
+
 use \League\BooBoo\BooBoo;
 use \League\BooBoo\Formatter\JsonFormatter;
 use \Laminas\Diactoros\Response\JsonResponse;
@@ -59,6 +63,20 @@ $db = new \PDO(
     [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
 );
 
+$doctrine_config = ORMSetup::createAttributeMetadataConfiguration(
+    ['/src/Restock/Entity'],
+    $config['debug']
+);
+$connection = DriverManager::getConnection([
+    'driver' => 'pdo_mysql',
+    'user' => $config['database']['username'],
+    'password' => $config['database']['password'],
+    'dbname' => $config['database']['database']
+],
+    $doctrine_config
+);
+$entityManager = new EntityManager($connection, $doctrine_config);
+
 $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
     $_SERVER,
     $_GET,
@@ -73,7 +91,6 @@ $container = new League\Container\Container;
 $userAccount = new UserAccount($db);
 $container->add(Restock\Controller\UserController::class)->addArgument($userAccount);
 $container->add(UserAccount::class);
-
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch ($request->getHeader('Accept')[0]) {
     case "application/json":
