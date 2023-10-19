@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-require '../vendor/autoload.php';
+require dirname(__DIR__).'../../vendor/autoload.php';
 // TODO: Use a config library instead?
 // Possible option: https://config.thephpleague.com/1.1/
 /**
  * @var array $config
  */
-require '../src/config.default.php';
-require '../src/config.php';
+require dirname(__DIR__). '/config.default.php';
+require dirname(__DIR__). '/config.php';
 
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
@@ -24,8 +24,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-use Restock\Middleware\Auth\Api;
-use Restock\Middleware\Auth\User;
 use Restock\Db\UserAccount;
 use Restock\Controller;
 
@@ -63,20 +61,7 @@ $db = new \PDO(
     [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
 );
 
-$doctrine_config = ORMSetup::createAttributeMetadataConfiguration(
-    ['/src/Restock/Entity'],
-    $config['debug']
-);
-$connection = DriverManager::getConnection([
-    'driver' => 'pdo_mysql',
-    'user' => $config['database']['username'],
-    'password' => $config['database']['password'],
-    'dbname' => $config['database']['database']
-],
-    $doctrine_config
-);
-$entityManager = new EntityManager($connection, $doctrine_config);
-
+// Todo: encapsulate request and routing external from setup so bootstrapping can be used to set up the environment for scripts
 $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
     $_SERVER,
     $_GET,
@@ -87,9 +72,25 @@ $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
 
 $responseFactory = new Laminas\Diactoros\ResponseFactory();
 $container = new League\Container\Container;
+$container->add(EntityManager::class, function (): EntityManager {
+    global $config;
+    $doctrine_config = ORMSetup::createAttributeMetadataConfiguration(
+        ['/src/Restock/Entity'],
+        $config['debug']
+    );
+    $connection = DriverManager::getConnection([
+        'driver' => 'pdo_mysql',
+        'user' => $config['database']['username'],
+        'password' => $config['database']['password'],
+        'dbname' => $config['database']['database']
+    ],
+        $doctrine_config
+    );
+    return new EntityManager($connection, $doctrine_config);
+});
 
 $userAccount = new UserAccount($db);
-$container->add(Restock\Controller\UserController::class)->addArgument($userAccount);
+$container->add(Restock\Controller\UserController::class)->addArgument($userAccount)->addArgument(EntityManager::class);
 $container->add(UserAccount::class);
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch ($request->getHeader('Accept')[0]) {
