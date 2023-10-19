@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Restock\Controller;
 
+use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Restock\Entity\User;
 
 class UserController
 {
     private \Restock\Db\UserAccount $userAccount;
+    private EntityManager $entityManager;
 
-    public function __construct(\Restock\Db\UserAccount $userAccount)
+    public function __construct(\Restock\Db\UserAccount $userAccount, EntityManager $entityManager)
     {
         $this->userAccount = $userAccount;
+        $this->entityManager = $entityManager;
     }
 
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
@@ -33,6 +37,7 @@ class UserController
 
         $username = $request->getParsedBody()['username'];
         $password = $request->getParsedBody()['password'];
+        $email = $request->getParsedBody()['email'];
 
         // Consider: mb_strlen and is varchar/other data type multibyte aware in db?
         // TODO: Limit charset of username to A-Z, a-z, 0-9, -, _
@@ -45,13 +50,13 @@ class UserController
             );
         }
 
-        if ($this->userAccount->CheckUsernameAvailability($username)) {
+        if (! $this->userAccount->CheckUsernameAvailability($username) ) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'Username is already taken.'
             ],
-                404
-            ); // Username is available
+                400
+            );
         }
 
         if (!is_string($password) || strlen($password) < 8) {
@@ -63,7 +68,9 @@ class UserController
             );
         }
 
-        $this->userAccount->CreateAccount($username, $password);
+        $user = new User($username, $password, $email);
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
         return new \Laminas\Diactoros\Response\JsonResponse(['result' => 'success'], 200);
     }
