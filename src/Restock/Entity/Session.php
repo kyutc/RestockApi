@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'session', schema: 'restock')]
-class Sesssion
+class Session
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
