@@ -22,10 +22,11 @@ CREATE DATABASE IF NOT EXISTS restock;
 
 CREATE TABLE restock.user
 (
-    email    VARCHAR(255) NOT NULL,
-    name     VARCHAR(100) NOT NULL,
-    password VARCHAR(100) NOT NULL,
-    PRIMARY KEY (email)
+    id       INT AUTO_INCREMENT NOT NULL,
+    name     VARCHAR(100)       NOT NULL,
+    password VARCHAR(100)       NOT NULL,
+    email    VARCHAR(255)       NOT NULL,
+    PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
   ENGINE = InnoDB;
@@ -39,71 +40,77 @@ CREATE TABLE restock.`group`
   ENGINE = InnoDB;
 CREATE TABLE restock.group_member
 (
-    group_id INT          NOT NULL,
-    user     VARCHAR(255) NOT NULL,
-    role     VARCHAR(255) NOT NULL,
+    id       INT AUTO_INCREMENT NOT NULL,
+    group_id INT                NOT NULL,
+    user_id  INT                NOT NULL,
+    role     VARCHAR(255)       NOT NULL,
     INDEX IDX_DDAFD348FE54D947 (group_id),
-    INDEX IDX_DDAFD3488D93D649 (user),
-    PRIMARY KEY (group_id, user)
+    INDEX IDX_DDAFD348A76ED395 (user_id),
+    PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
   ENGINE = InnoDB;
 CREATE TABLE restock.recipe
 (
-    name         VARCHAR(100) NOT NULL,
-    user         VARCHAR(255) NOT NULL,
-    instructions LONGTEXT     NOT NULL,
-    INDEX IDX_E80219338D93D649 (user),
-    PRIMARY KEY (user, name)
+    id           INT AUTO_INCREMENT NOT NULL,
+    user_id      INT                NOT NULL,
+    name         VARCHAR(100)       NOT NULL,
+    instructions LONGTEXT           NOT NULL,
+    INDEX IDX_E8021933A76ED395 (user_id),
+    PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
   ENGINE = InnoDB;
 CREATE TABLE restock.session
 (
-    token          VARCHAR(100) NOT NULL,
-    user           VARCHAR(255) NOT NULL,
-    create_date    DATETIME     NOT NULL COMMENT '(DC2Type:datetime_immutable)',
-    last_used_date DATETIME     NOT NULL COMMENT '(DC2Type:datetime_immutable)',
-    INDEX IDX_D71B9B658D93D649 (user),
-    PRIMARY KEY (token)
+    id             INT AUTO_INCREMENT NOT NULL,
+    user_id        INT                NOT NULL,
+    token          VARCHAR(100)       NOT NULL,
+    create_date    DATETIME           NOT NULL COMMENT '(DC2Type:datetime_immutable)',
+    last_used_date DATETIME           NOT NULL COMMENT '(DC2Type:datetime_immutable)',
+    INDEX IDX_D71B9B65A76ED395 (user_id),
+    PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
   ENGINE = InnoDB;
 CREATE TABLE restock.action_log
 (
-    timestamp   DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)',
-    group_id    INT      NOT NULL,
-    log_message LONGTEXT NOT NULL,
+    id          INT AUTO_INCREMENT NOT NULL,
+    group_id    INT                NOT NULL,
+    log_message LONGTEXT           NOT NULL,
+    timestamp   DATETIME           NOT NULL COMMENT '(DC2Type:datetime_immutable)',
     INDEX IDX_E3774C4BFE54D947 (group_id),
-    PRIMARY KEY (group_id, timestamp)
+    PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
   ENGINE = InnoDB;
 CREATE TABLE restock.item
 (
-    name                           VARCHAR(255) NOT NULL,
-    group_id                       INT          NOT NULL,
-    description                    VARCHAR(255) NOT NULL,
-    category                       VARCHAR(255) NOT NULL,
-    pantry_quantity                INT          NOT NULL,
-    minimum_threshold              INT          NOT NULL,
-    auto_add_to_shopping_list      TINYINT(1)   NOT NULL,
-    shopping_list_quantity         INT          NOT NULL,
-    dont_add_to_pantry_on_purchase TINYINT(1)   NOT NULL,
+    id                             INT AUTO_INCREMENT NOT NULL,
+    group_id                       INT                NOT NULL,
+    name                           VARCHAR(255)       NOT NULL,
+    description                    VARCHAR(255)       NOT NULL,
+    category                       VARCHAR(255)       NOT NULL,
+    pantry_quantity                INT                NOT NULL,
+    minimum_threshold              INT                NOT NULL,
+    auto_add_to_shopping_list      TINYINT(1)         NOT NULL,
+    shopping_list_quantity         INT                NOT NULL,
+    dont_add_to_pantry_on_purchase TINYINT(1)         NOT NULL,
     INDEX IDX_B31E3FADFE54D947 (group_id),
-    PRIMARY KEY (group_id, name)
+    PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
   ENGINE = InnoDB;
 ALTER TABLE restock.group_member
     ADD CONSTRAINT FK_DDAFD348FE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
 ALTER TABLE restock.group_member
-    ADD CONSTRAINT FK_DDAFD3488D93D649 FOREIGN KEY (user) REFERENCES restock.user (email);
+    ADD CONSTRAINT FK_DDAFD348A76ED395 FOREIGN KEY (user_id) REFERENCES restock.user (id);
 ALTER TABLE restock.recipe
-    ADD CONSTRAINT FK_E80219338D93D649 FOREIGN KEY (user) REFERENCES restock.user (email);
+    ADD CONSTRAINT FK_E8021933A76ED395 FOREIGN KEY (user_id) REFERENCES restock.user (id);
 ALTER TABLE restock.session
-    ADD CONSTRAINT FK_D71B9B658D93D649 FOREIGN KEY (user) REFERENCES restock.user (email);
+    ADD CONSTRAINT FK_D71B9B65A76ED395 FOREIGN KEY (user_id) REFERENCES restock.user (id);
 ALTER TABLE restock.action_log
     ADD CONSTRAINT FK_E3774C4BFE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
 ALTER TABLE restock.item
     ADD CONSTRAINT FK_B31E3FADFE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
+

@@ -14,14 +14,18 @@ class GroupMember
     const ADMIN = 'admin';
     const MEMBER = 'member';
 
-    #[Orm\Id]
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id;
+
     #[ORM\ManyToOne(targetEntity: Group::class, inversedBy: 'group_members')]
     #[ORM\JoinColumn(name: 'group_id', referencedColumnName: 'id', nullable: false)]
     private Group $group;
 
-    #[Orm\Id]
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'user', referencedColumnName: 'email', nullable: false)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
     private User $user;
 
     #[ORM\Column]
@@ -37,6 +41,11 @@ class GroupMember
         $this->group = $group;
         $this->user = $user;
         $this->setRole($role);
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
     }
 
     public function getGroup(): Group

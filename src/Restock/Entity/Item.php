@@ -9,12 +9,15 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'item', schema: 'restock')]
 class Item
 {
-    #[Orm\Id]
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id;
+
     #[ORM\ManyToOne(targetEntity: Group::class, inversedBy: 'items')]
     #[Orm\JoinColumn(name: 'group_id', referencedColumnName: 'id', nullable: false)]
     private Group $group;
 
-    #[Orm\Id]
     #[ORM\Column(length: 255)]
     private string $name;
 
@@ -45,6 +48,11 @@ class Item
         $this->name = $name;
         $this->description = $description;
         $this->category = $category;
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
     }
 
     public function getGroup(): Group

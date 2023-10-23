@@ -10,6 +10,10 @@ use Doctrine\ORM\Mapping as ORM;
 class ActionLog
 {
     #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id;
+
     #[ORM\ManyToOne(targetEntity: Group::class, inversedBy: 'history')]
     #[ORM\JoinColumn(name: 'group_id', referencedColumnName: 'id', nullable: false)]
     private Group $group;
@@ -17,7 +21,6 @@ class ActionLog
     #[ORM\Column(type: Types::TEXT)]
     private string $log_message;
 
-    #[ORM\Id]
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $timestamp;
 
@@ -26,6 +29,11 @@ class ActionLog
         $this->group = $group;
         $this->log_message = $log_message;
         $this->timestamp = new \DateTimeImmutable('now');
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
     }
 
     public function getGroup(): Group

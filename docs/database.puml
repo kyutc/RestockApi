@@ -5,8 +5,9 @@ right footer Let that sync in...
 title Database Structure
 
     entity User {
-        *email : string
+        *id : int
         --
+        *email : string
         *name : string
         *password : string
     }
@@ -18,45 +19,50 @@ title Database Structure
     }
 
     entity GroupMember {
+        *id : int
+        --
         *group_id : int <<FK>>
         *user : string <<FK>>
-        --
         *role : string
     }
 
     entity Recipes {
+        *id : int
+        --
         *user_id : int <<FK>>
         *name : string
-        --
         /' Including ingredients here for the purpose of identifying possible recipes for given ingredients would
            require a more advanced structure.
         '/
         *instructions : text
     }
 
-     entity Item {
-         *group_id : <<FK>>
-         *name : string
-         --
-         *description: string
-         *category : string
-         *pantry_quantity : int
-         *minimum_threshold : int
-         *auto_add_to_shopping_list : bool
-         *shopping_list_quantity : int
-         *dont_add_to_pantry_on_purchase : bool
+    entity Item {
+        *id : int
+        --
+        *group_id : <<FK>>
+        *name : string
+        *description: string
+        *category : string
+        *pantry_quantity : int
+        *minimum_threshold : int
+        *auto_add_to_shopping_list : bool
+        *shopping_list_quantity : int
+        *dont_add_to_pantry_on_purchase : bool
      }
 
     entity ActionLog {
+        *id : int
+        --
         *timestamp : datetime
         *group_id : int <<FK>>
-        --
         *message : string
     }
 
     entity Session {
-        *token : string
+        *id : int
         --
+        *token : string
         *user_id : int <<FK>>
         *create_date : datetime
         *last_use_date : datetime

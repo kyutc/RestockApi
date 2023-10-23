@@ -10,13 +10,17 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'user', schema: 'restock')]
 class User
 {
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id;
+
     #[ORM\Column(length: 100)]
     private string $name;
 
     #[ORM\Column(length: 100)]
     private string $password;
 
-    #[ORM\Id]
     #[ORM\Column(length: 255)]
     private string $email;
 
@@ -39,6 +43,11 @@ class User
         $this->email = $email;
         $this->sessions = new ArrayCollection();
         $this->recipes = new ArrayCollection();
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
     }
 
     public function getName(): string
