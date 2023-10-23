@@ -14,25 +14,16 @@ class GroupMember
     const ADMIN = 'admin';
     const MEMBER = 'member';
 
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id;
-
+    #[Orm\Id]
     #[ORM\ManyToOne(targetEntity: Group::class, inversedBy: 'group_members')]
+    #[ORM\JoinColumn(name: 'group_id', referencedColumnName: 'id', nullable: false)]
     private Group $group;
 
+    #[Orm\Id]
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'user_id')]
+    #[ORM\JoinColumn(name: 'user', referencedColumnName: 'email', nullable: false)]
     private User $user;
 
-
-    /**
-     * Consider whether it's worth having enums.
-     * https://www.doctrine-project.org/projects/doctrine-orm/en/2.16/cookbook/mysql-enums.html
-     * MariaDB has the option to add enum values without rewriting the table since 10.3.7
-     * https://mariadb.com/kb/en/innodb-online-ddl-operations-with-the-instant-alter-algorithm/#adding-a-new-enum-option
-     */
     #[ORM\Column]
     private string $role;
 
@@ -46,11 +37,6 @@ class GroupMember
         $this->group = $group;
         $this->user = $user;
         $this->setRole($role);
-    }
-
-    public function getId(): int
-    {
-        return $this->id;
     }
 
     public function getGroup(): Group

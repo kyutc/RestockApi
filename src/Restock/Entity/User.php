@@ -8,25 +8,24 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'user', schema: 'restock')]
-#[ORM\UniqueConstraint(name: 'email', columns: ['email'])]
 class User
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id;
-
     #[ORM\Column(length: 100)]
     private string $name;
 
     #[ORM\Column(length: 100)]
     private string $password;
 
-    #[ORM\Column(length: 255, unique: true)]
+    #[ORM\Id]
+    #[ORM\Column(length: 255)]
     private string $email;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Recipe::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(mappedBy: 'user', targetEntity: Session::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $sessions;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Recipe::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $recipes;
+
 
     /**
      * @param string $name
@@ -38,12 +37,8 @@ class User
         $this->name = $name;
         $this->password = $password; # Todo: hash password
         $this->email = $email;
+        $this->sessions = new ArrayCollection();
         $this->recipes = new ArrayCollection();
-    }
-
-    public function getId(): int
-    {
-        return $this->id;
     }
 
     public function getName(): string
@@ -82,6 +77,22 @@ class User
     {
         $this->email = $email;
         return $this;
+    }
+
+    public function getSessions(): Collection
+    {
+        return $this->sessions;
+    }
+
+    public function createSession(): self
+    {
+        $this->sessions->add(new Session($this));
+        return $this;
+    }
+
+    public function hasSession(string $token): bool {
+        if ($this->sessions->get($token) ?? false) return true;
+        return false;
     }
 
     public function getRecipes(): Collection

@@ -9,14 +9,11 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'session', schema: 'restock')]
 class Session
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id;
-
-    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'session')]
+    #[ORM\JoinColumn(name: 'user',referencedColumnName: 'email', nullable: false)]
     private User $user;
 
+    #[ORM\Id]
     #[ORM\Column(length: 100)]
     private string $token;
 
@@ -31,17 +28,12 @@ class Session
      * @param string $token
      * @param \DateTimeImmutable $create_date
      */
-    public function __construct(User $user, string $token)
+    public function __construct(User $user)
     {
         $this->user = $user;
-        $this->token = $token;
+        $this->token = base64_encode(random_bytes(32));
         $this->create_date = new \DateTimeImmutable('now');
         $this->last_used_date = new \DateTimeImmutable('now');
-    }
-
-    public function getId(): int
-    {
-        return $this->id;
     }
 
     public function getUser(): User

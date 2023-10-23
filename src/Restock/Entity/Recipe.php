@@ -10,23 +10,22 @@ use Doctrine\DBAL\Types\Types as Types;
 class Recipe
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id;
-
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'recipes')]
-    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')]
+    #[ORM\JoinColumn(name: 'user', referencedColumnName: 'email', nullable: false)]
     private User $user;
 
+    #[ORM\Id]
     #[ORM\Column(length: 100)]
     private string $name;
 
     #[ORM\Column(type: Types::TEXT)]
     private string $instructions;
 
-    public function getId(): int
+    public function __construct(User $user, string $name, string $instructions)
     {
-        return $this->id;
+        $this->user = $user;
+        $this->name = $name;
+        $this->instructions = $instructions;
     }
 
     public function getUser(): User
