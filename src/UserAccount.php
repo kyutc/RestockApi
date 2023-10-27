@@ -65,10 +65,10 @@ class UserAccount
         return $query->rowCount() > 0;
     }
 
-    public function Login(string $username, string $password, string &$token): bool
+    public function Login(string $email, string $password, string &$token): bool
     {
-        $query = $this->db->prepare('SELECT `id`, `password` FROM `user` WHERE `name` = ?');
-        $query->execute([$username]);
+        $query = $this->db->prepare('SELECT `id`, `password` FROM `user` WHERE `email` = ?');
+        $query->execute([$email]);
 
         if ($query->rowCount() !== 1) {
             return false;
