@@ -71,4 +71,10 @@ class Group
     {
         return $this->history;
     }
+
+    public function createItem(string $itemName, string $description = '', string $category = ''): Item
+    {
+        return new Item($this, $itemName, $description, $category);
+    }
+
 }
