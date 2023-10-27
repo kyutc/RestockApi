@@ -65,9 +65,9 @@ class Session
         return $this->last_used_date;
     }
 
-    public function setLastUsedDate(\DateTimeImmutable $last_used_date): self
+    public function setLastUsedDate(): self
     {
-        $this->last_used_date = $last_used_date;
+        $this->last_used_date = new \DateTimeImmutable('now'); //Creates a new DateTimeImmutable object to replace old one
         return $this;
     }
 
