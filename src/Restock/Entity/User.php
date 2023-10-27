@@ -70,6 +70,10 @@ class User
     {
         return password_hash($password, PASSWORD_ARGON2ID);
     }
+    private function ValidatePasswordHash(string $password, string $password_hash): bool
+    {
+        return password_verify($password, $password_hash);
+    }
 
     public function setPassword(string $password): self
     {
@@ -124,5 +128,9 @@ class User
             $this->recipes->remove($recipe);
         }
         return $this;
+    }
+    public function createGroup(String $groupName): Group
+    {
+        return new Group($groupName, $this);
     }
 }
