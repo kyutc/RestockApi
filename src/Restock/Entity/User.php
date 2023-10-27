@@ -70,9 +70,9 @@ class User
     {
         return password_hash($password, PASSWORD_ARGON2ID);
     }
-    private function ValidatePasswordHash(string $password, string $password_hash): bool
+    private function validatePasswordHash(string $password, string $passwordHash): bool
     {
-        return password_verify($password, $password_hash);
+        return password_verify($password, $passwordHash);
     }
 
     public function setPassword(string $password): self
