@@ -74,7 +74,14 @@ class Group
 
     public function createItem(string $itemName, string $description = '', string $category = ''): Item
     {
-        return new Item($this, $itemName, $description, $category);
+        $newItem = new Item($this, $itemName, $description, $category);
+        $this->items->add($newItem);
+        return $newItem;
+    }
+    public function removeItem(Item $item): self
+    {
+        $this->items->removeElement($item);
+        return $this;
     }
 
 }
