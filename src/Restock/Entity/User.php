@@ -104,7 +104,10 @@ class User
     }
 
     public function hasSession(string $token): bool {
-        if ($this->sessions->get($token) ?? false) return true;
+        if ($session = $this->sessions->get($token)){
+            $session->setLastUsedDate();
+            return true;
+        }
         return false;
     }
 
