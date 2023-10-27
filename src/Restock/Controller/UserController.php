@@ -112,7 +112,7 @@ class UserController
 
         return new JsonResponse([
             'result' => 'error',
-            'message' => 'Invalid username or password.'
+            'message' => 'Invalid email or password.'
         ],
             401
         );
