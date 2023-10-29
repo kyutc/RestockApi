@@ -19,20 +19,10 @@
 -- Table structure for table `apiauth`
 --
 
-DROP TABLE IF EXISTS User;
-CREATE TABLE User (
-                      user_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                      name VARCHAR(100) NOT NULL,
-                      password VARCHAR(100) NOT NULL,
-                      email VARCHAR(255) UNIQUE,
-    -- other user attributes...
-                      INDEX index_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS `ApiAuth`;
+DROP TABLE IF EXISTS `apiauth`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ApiAuth` (
+CREATE TABLE `apiauth` (
                            `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
                            `user_id` int(10) unsigned NOT NULL,
                            `token` varchar(100) NOT NULL,
@@ -40,88 +30,26 @@ CREATE TABLE `ApiAuth` (
                            `last_use_date` datetime NOT NULL,
                            PRIMARY KEY (`id`),
                            KEY `apiauth_FK` (`user_id`),
-                           CONSTRAINT `apiauth_FK` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+                           CONSTRAINT `apiauth_FK` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-DROP TABLE IF EXISTS `Group`;
-CREATE TABLE `Group` (
-                         group_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                         group_name VARCHAR(50) NOT NULL,
-    -- other group attributes...
-                         INDEX index_group_id (group_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
+--
+-- Table structure for table `user`
+--
 
-DROP TABLE IF EXISTS Recipe;
-CREATE TABLE Recipe (
-                        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                        user_id INT UNSIGNED NOT NULL,
-                        recipe_name VARCHAR(200) NOT NULL,
-                        instructions TEXT NOT NULL,
-    -- other recipe attributes...
-                        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
+DROP TABLE IF EXISTS `user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user` (
+                        `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+                        `name` varchar(100) NOT NULL,
+                        `password` varchar(100) NOT NULL,
+                        PRIMARY KEY (`id`),
+                        UNIQUE KEY `user_UN` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
-DROP TABLE IF EXISTS Session;
-CREATE TABLE Session (
-                         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                         user_id INT UNSIGNED NOT NULL,
-                         token VARCHAR(100) NOT NULL,
-                         create_date DATETIME NOT NULL,
-                         last_use_date DATETIME NOT NULL,
-    -- other session attributes...
-                         FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS GroupMember;
-CREATE TABLE GroupMember (
-                             id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                             group_id INT UNSIGNED NOT NULL,
-                             user_id INT UNSIGNED NOT NULL,
-                             role ENUM('Member', 'Admin') NOT NULL,
-    -- other group member attributes...
-                             FOREIGN KEY (group_id) REFERENCES `Group`(group_id) ON DELETE CASCADE ON UPDATE CASCADE,
-                             FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS Item;
-CREATE TABLE Item (
-                      item_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                      group_id INT UNSIGNED NOT NULL,
-                      item_name VARCHAR(255) NOT NULL,
-                      description VARCHAR(255) NOT NULL,
-                      category VARCHAR(255) NOT NULL,
-    -- other item attributes...
-                      FOREIGN KEY (group_id) REFERENCES `Group`(group_id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS ActionLog;
-CREATE TABLE ActionLog (
-                           id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                           group_id INT UNSIGNED NOT NULL,
-                           log_message TEXT NOT NULL,
-                           timestamp DATETIME NOT NULL,
-    -- other log attributes...
-                           FOREIGN KEY (group_id) REFERENCES `Group`(group_id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS Pantry;
-CREATE TABLE Pantry (
-                        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                        item_id INT UNSIGNED NOT NULL,
-                        quantity INT NOT NULL,
-                        minimum_threshold INT NOT NULL,
-                        auto_add_to_shopping_list BOOLEAN NOT NULL,
-    -- other pantry attributes...
-                        FOREIGN KEY (item_id) REFERENCES Item(item_id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS ShoppingList;
-CREATE TABLE ShoppingList (
-                              id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                              item_id INT UNSIGNED NOT NULL,
-                              quantity INT NOT NULL,
-                              dont_add_to_pantry BOOLEAN NOT NULL,
-    -- other shopping list attributes...
-                              FOREIGN KEY (item_id) REFERENCES Item(item_id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE= utf8mb4_general_ci;
+--
+-- Dumping routines for database 'restock'
+--
