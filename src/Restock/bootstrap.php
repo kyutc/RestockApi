@@ -2,14 +2,18 @@
 
 declare(strict_types=1);
 
-require '../vendor/autoload.php';
+require dirname(__DIR__).'../../vendor/autoload.php';
 // TODO: Use a config library instead?
 // Possible option: https://config.thephpleague.com/1.1/
 /**
  * @var array $config
  */
-require '../src/config.default.php';
-require '../src/config.php';
+require dirname(__DIR__). '/config.default.php';
+require dirname(__DIR__). '/config.php';
+
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\ORMSetup;
 
 use \League\BooBoo\BooBoo;
 use \League\BooBoo\Formatter\JsonFormatter;
@@ -20,8 +24,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-use Restock\Middleware\Auth\Api;
-use Restock\Middleware\Auth\User;
 use Restock\Db\UserAccount;
 use Restock\Controller;
 
@@ -59,6 +61,7 @@ $db = new \PDO(
     [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
 );
 
+// Todo: encapsulate request and routing external from setup so bootstrapping can be used to set up the environment for scripts
 $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
     $_SERVER,
     $_GET,
@@ -69,11 +72,26 @@ $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
 
 $responseFactory = new Laminas\Diactoros\ResponseFactory();
 $container = new League\Container\Container;
+$container->add(EntityManager::class, function (): EntityManager {
+    global $config;
+    $doctrine_config = ORMSetup::createAttributeMetadataConfiguration(
+        ['/src/Restock/Entity'],
+        $config['debug']
+    );
+    $connection = DriverManager::getConnection([
+        'driver' => 'pdo_mysql',
+        'user' => $config['database']['username'],
+        'password' => $config['database']['password'],
+        'dbname' => $config['database']['database']
+    ],
+        $doctrine_config
+    );
+    return new EntityManager($connection, $doctrine_config);
+});
 
 $userAccount = new UserAccount($db);
-$container->add(Restock\Controller\Api::class)->addArgument($userAccount);
+$container->add(Restock\Controller\UserController::class)->addArgument($userAccount)->addArgument(EntityManager::class);
 $container->add(UserAccount::class);
-
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch ($request->getHeader('Accept')[0]) {
     case "application/json":
@@ -100,42 +118,42 @@ $router->addPatternMatcher('username', '[a-zA-Z0-9_\-]{3,30}');
 
 // API endpoints which do not require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-    $route->map('POST', '/session', [Controller\Api::class, 'userLogin']);
-    $route->map('POST', '/user', [Restock\Controller\Api::class, 'registerNewUser']);
+    $route->map('POST', '/session', [Restock\Controller\UserController::class, 'userLogin']);
+    $route->map('POST', '/user', [Restock\Controller\UserController::class, 'createUser']);
 
-    $route->map('HEAD', '/user/{username:username}', [Restock\Controller\Api::class, 'checkUsernameAvailable']);
+    $route->map('HEAD', '/user/{username:username}', [Restock\Controller\UserController::class, 'checkUsernameAvailable']);
 })->middleware(new \Restock\Middleware\Auth\Api());
 
 // API endpoints which require user authentication
 $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
-    $route->map('GET', '/authtest', [Restock\Controller\Api::class, 'authTest']);
+    $route->map('GET', '/authtest', [Restock\Controller\UserController::class, 'authTest']);
 
-    $route->map('DELETE', '/session', [Controller\Api::class, 'userLogout']);
+    $route->map('DELETE', '/session', [Controller\UserController::class, 'userLogout']);
 
-    $route->map('GET', '/user/{user_id:number}', [Restock\Controller\Api::class, 'getUserAccount']);
-    $route->map('PUT', '/user/{user_id:number}', [Restock\Controller\Api::class, 'updateUserAccount']);
-    $route->map('DELETE', '/user/{user_id:number}', [Restock\Controller\Api::class, 'deleteUserAccount']);
+    $route->map('GET', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'getUser']);
+    $route->map('PUT', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'updateUser']);
+    $route->map('DELETE', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'deleteUser']);
 
-    $route->map('GET', '/group/{group_id:number}', [Restock\Controller\Api::class, 'getGroupDetails']);
-    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\Api::class, 'createGroup']);
-    $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\Api::class, 'updateGroup']);
-    $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\Api::class, 'deleteGroup']);
+    $route->map('GET', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'getGroupDetails']);
+    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'createGroup']);
+    $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'updateGroup']);
+    $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\UserController::class, 'deleteGroup']);
 
     $route->map(
         'GET',
         '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'getGroupMemberDetails']
+        [Restock\Controller\UserController::class, 'getGroupMemberDetails']
     );
-    $route->map('POST', '/group/{group_id:number}/addmember', [Restock\Controller\Api::class, 'addGroupMember']);
+    $route->map('POST', '/group/{group_id:number}/addmember', [Restock\Controller\UserController::class, 'addGroupMember']);
     $route->map(
         'PUT',
         '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'updateGroupMember']
+        [Restock\Controller\UserController::class, 'updateGroupMember']
     );
     $route->map(
         'DELETE',
         '/groupmember/{member_id:number}',
-        [Restock\Controller\Api::class, 'deleteGroupMember']
+        [Restock\Controller\UserController::class, 'deleteGroupMember']
     );
 })
     ->middleware(new \Restock\Middleware\Auth\Api())

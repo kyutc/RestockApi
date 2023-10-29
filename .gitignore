@@ -5,3 +5,4 @@ private.key
 composer.phar
 config.php
 .vscode
+/.phpunit.cache/
