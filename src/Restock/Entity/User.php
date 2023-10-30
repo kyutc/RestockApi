@@ -8,7 +8,6 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'user', schema: 'restock')]
-#[ORM\UniqueConstraint(name: 'email', columns: ['email'])]
 class User
 {
     #[ORM\Id]
@@ -22,11 +21,15 @@ class User
     #[ORM\Column(length: 100)]
     private string $password;
 
-    #[ORM\Column(length: 255, unique: true)]
+    #[ORM\Column(length: 255)]
     private string $email;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Recipe::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(mappedBy: 'user', targetEntity: Session::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $sessions;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Recipe::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $recipes;
+
 
     /**
      * @param string $name
@@ -38,10 +41,11 @@ class User
         $this->name = $name;
         $this->password = $password; # Todo: hash password
         $this->email = $email;
+        $this->sessions = new ArrayCollection();
         $this->recipes = new ArrayCollection();
     }
 
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -66,6 +70,10 @@ class User
     {
         return password_hash($password, PASSWORD_ARGON2ID);
     }
+    private function validatePasswordHash(string $password, string $passwordHash): bool
+    {
+        return password_verify($password, $passwordHash);
+    }
 
     public function setPassword(string $password): self
     {
@@ -82,6 +90,25 @@ class User
     {
         $this->email = $email;
         return $this;
+    }
+
+    public function getSessions(): Collection
+    {
+        return $this->sessions;
+    }
+
+    public function createSession(): self
+    {
+        $this->sessions->add(new Session($this));
+        return $this;
+    }
+
+    public function hasSession(string $token): bool {
+        if ($session = $this->sessions->get($token)){
+            $session->setLastUsedDate();
+            return true;
+        }
+        return false;
     }
 
     public function getRecipes(): Collection
@@ -104,5 +131,9 @@ class User
             $this->recipes->remove($recipe);
         }
         return $this;
+    }
+    public function createGroup(String $groupName): Group
+    {
+        return new Group($groupName, $this);
     }
 }

@@ -7,14 +7,15 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'session', schema: 'restock')]
-class Sesssion
+class Session
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'session')]
+    #[ORM\JoinColumn(name: 'user_id',referencedColumnName: 'id', nullable: false)]
     private User $user;
 
     #[ORM\Column(length: 100)]
@@ -31,15 +32,15 @@ class Sesssion
      * @param string $token
      * @param \DateTimeImmutable $create_date
      */
-    public function __construct(User $user, string $token)
+    public function __construct(User $user)
     {
         $this->user = $user;
-        $this->token = $token;
+        $this->token = base64_encode(random_bytes(32));
         $this->create_date = new \DateTimeImmutable('now');
         $this->last_used_date = new \DateTimeImmutable('now');
     }
 
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -64,9 +65,9 @@ class Sesssion
         return $this->last_used_date;
     }
 
-    public function setLastUsedDate(\DateTimeImmutable $last_used_date): self
+    public function setLastUsedDate(): self
     {
-        $this->last_used_date = $last_used_date;
+        $this->last_used_date = new \DateTimeImmutable('now'); //Creates a new DateTimeImmutable object to replace old one
         return $this;
     }
 

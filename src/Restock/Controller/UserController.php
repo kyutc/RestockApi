@@ -87,18 +87,19 @@ class UserController
 
         $username = $request->getParsedBody()['username'];
         $password = $request->getParsedBody()['password'];
+        $email = $request->getParsedBody()['email'];
 
-        if (!is_string($username) || !is_string($password)) {
+        if (!is_string($username) || !is_string($password) || !is_string($email)) {
             return new JsonResponse([
                 'result' => 'error',
-                'message' => 'Invalid username or password.'
+                'message' => 'Invalid username, email, or password.'
             ],
                 401
             );
         }
 
         $token = '';
-        $result = $this->userAccount->Login($username, $password, $token);
+        $result = $this->userAccount->Login($email, $password, $token);
 
         if ($result) {
             return new JsonResponse([
@@ -111,7 +112,7 @@ class UserController
 
         return new JsonResponse([
             'result' => 'error',
-            'message' => 'Invalid username or password.'
+            'message' => 'Invalid email or password.'
         ],
             401
         );

@@ -15,6 +15,7 @@ class ActionLog
     private ?int $id;
 
     #[ORM\ManyToOne(targetEntity: Group::class, inversedBy: 'history')]
+    #[ORM\JoinColumn(name: 'group_id', referencedColumnName: 'id', nullable: false)]
     private Group $group;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -23,7 +24,14 @@ class ActionLog
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $timestamp;
 
-    public function getId(): int
+    public function __construct(Group $group, string $log_message)
+    {
+        $this->group = $group;
+        $this->log_message = $log_message;
+        $this->timestamp = new \DateTimeImmutable('now');
+    }
+
+    public function getId(): ?int
     {
         return $this->id;
     }
