@@ -5,51 +5,30 @@ right footer Let that sync in...
 title Database Structure
 
     entity User {
-        *id : int <<PK>>
+        *id : int
+        --
+        *email : string
         *name : string
-        *email : string <<Unique>>
         *password : string
     }
 
     entity Group {
-        *id : int <<PK>>
+        *id : int
+        --
         *name : string
     }
 
     entity GroupMember {
-        *id : int <<PK>>
+        *id : int
+        --
         *group_id : int <<FK>>
-        *user_id : int <<FK>>
-        ' Role can be expanded to something dynamic rather than an enum
-        *role : enum
-    }
-
-    entity Item {
-        *id: int <<PK>>
-        *group_id : <<FK>>
-        *name : string
-        *description: string
-        ' Category could be an enum
-        *category : string
-    }
-
-    entity Pantry {
-        *id: int <<PK>>
-        *item_id : <<FK>>
-        *quantity : int
-        *minimum_threshold : int
-        *auto_add_to_shopping_list : bool
-    }
-
-    entity ShoppingList {
-        *id: int <<PK>>
-        *item_id : <<FK>>
-        *quantity : int
-		*dont_add_to_pantry : bool
+        *user : string <<FK>>
+        *role : string
     }
 
     entity Recipes {
-        *id : int <<PK>>
+        *id : int
+        --
         *user_id : int <<FK>>
         *name : string
         /' Including ingredients here for the purpose of identifying possible recipes for given ingredients would
@@ -57,19 +36,34 @@ title Database Structure
         '/
         *instructions : text
     }
-    
+
+    entity Item {
+        *id : int
+        --
+        *group_id : <<FK>>
+        *name : string
+        *description: string
+        *category : string
+        *pantry_quantity : int
+        *minimum_threshold : int
+        *auto_add_to_shopping_list : bool
+        *shopping_list_quantity : int
+        *dont_add_to_pantry_on_purchase : bool
+     }
+
     entity ActionLog {
-        ' Is this an audit log?
-        *id : int <<PK>>
+        *id : int
+        --
+        *timestamp : datetime
         *group_id : int <<FK>>
         *message : string
-        *timestamp : datetime
     }
 
     entity Session {
-        *id : int <<PK>>
-        *user_id : int <<FK>>
+        *id : int
+        --
         *token : string
+        *user_id : int <<FK>>
         *create_date : datetime
         *last_use_date : datetime
     }
@@ -80,7 +74,5 @@ title Database Structure
     Group ||--o{ ActionLog
     Group ||--o{ GroupMember
     Group ||--o{ Item
-    Item  ||--o{ Pantry
-    Item  ||--o{ ShoppingList
 
 @enduml

@@ -15,7 +15,7 @@ class Recipe
     private ?int $id;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'recipes')]
-    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
     private User $user;
 
     #[ORM\Column(length: 100)]
@@ -24,7 +24,14 @@ class Recipe
     #[ORM\Column(type: Types::TEXT)]
     private string $instructions;
 
-    public function getId(): int
+    public function __construct(User $user, string $name, string $instructions)
+    {
+        $this->user = $user;
+        $this->name = $name;
+        $this->instructions = $instructions;
+    }
+
+    public function getId(): ?int
     {
         return $this->id;
     }

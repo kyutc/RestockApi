@@ -2,6 +2,7 @@
 
 namespace Restock\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -9,22 +10,31 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'group', schema: 'restock')]
 class Group
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[Orm\Id]
+    #[Orm\GeneratedValue]
+    #[Orm\Column]
     private ?int $id;
 
     #[ORM\Column(length: 100)]
     private string $name;
 
-    #[ORM\OneToMany(targetEntity: GroupMember::class, mappedBy: 'group', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'group', targetEntity: GroupMember::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $group_members;
 
-    #[ORM\OneToMany(targetEntity: Item::class, mappedBy: 'group', cascade: ['remove'])]
+    #[ORM\OneToMany(mappedBy: 'group', targetEntity: Item::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $items;
 
-    #[ORM\OneToMany(targetEntity: ActionLog::class, mappedBy: 'group', cascade: ['remove'])]
+    #[ORM\OneToMany(mappedBy: 'group', targetEntity: ActionLog::class, cascade: ['remove'])]
     private Collection $history;
+
+    public function __construct(string $name, User $owner)
+    {
+        $this->name = $name;
+        $this->group_members = new ArrayCollection();
+        $this->addGroupMember($owner, GroupMember::OWNER);
+        $this->items = new ArrayCollection();
+        $this->history = new ArrayCollection();
+    }
 
     public function getId(): int
     {
@@ -46,12 +56,32 @@ class Group
         return $this->group_members;
     }
 
-    public function addGroupMember(GroupMember $group_member): self
+    public function addGroupMember(User $user, string $role = GroupMember::MEMBER): self
     {
-        if (! $this->group_members->contains($group_member) )
-        {
-            $this->group_members->add($group_member);
-        }
+        $this->group_members->add(new GroupMember($this, $user, $role));
         return $this;
     }
+
+    public function getItems(): Collection
+    {
+        return $this->items;
+    }
+
+    public function getHistory(): Collection
+    {
+        return $this->history;
+    }
+
+    public function createItem(string $itemName, string $description = '', string $category = ''): Item
+    {
+        $newItem = new Item($this, $itemName, $description, $category);
+        $this->items->add($newItem);
+        return $newItem;
+    }
+    public function removeItem(Item $item): self
+    {
+        $this->items->removeElement($item);
+        return $this;
+    }
+
 }
