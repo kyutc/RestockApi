@@ -28,26 +28,40 @@ class Item
     private string $category;
 
     #[ORM\Column]
-    private int $pantry_quantity = 0;
+    private int $pantry_quantity;
 
     #[ORM\Column]
-    private int $minimum_threshold = 0;
+    private int $minimum_threshold;
 
     #[ORM\Column]
-    private bool $auto_add_to_shopping_list = false;
+    private bool $auto_add_to_shopping_list;
 
     #[ORM\Column]
-    private int $shopping_list_quantity = 0;
+    private int $shopping_list_quantity;
 
     #[ORM\Column]
-    private bool $dont_add_to_pantry_on_purchase = false;
+    private bool $dont_add_to_pantry_on_purchase;
 
-    public function __construct(Group $group, string $name, string $description = '', string $category = '')
-    {
+    public function __construct(
+        Group $group,
+        string $name,
+        string $description = '',
+        string $category = '',
+        int $pantry_quantity = 0,
+        int $minimum_threshold = 0,
+        bool $auto_add_to_shopping_list = true,
+        int $shopping_list_quantity = 0,
+        bool $dont_add_to_pantry_on_purchase = false
+    ) {
         $this->group = $group;
         $this->name = $name;
         $this->description = $description;
         $this->category = $category;
+        $this->pantry_quantity = $pantry_quantity;
+        $this->minimum_threshold = $minimum_threshold;
+        $this->auto_add_to_shopping_list = $auto_add_to_shopping_list;
+        $this->shopping_list_quantity = $shopping_list_quantity;
+        $this->dont_add_to_pantry_on_purchase = $dont_add_to_pantry_on_purchase;
     }
 
     public function getId(): ?int
