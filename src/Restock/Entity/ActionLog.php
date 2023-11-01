@@ -41,6 +41,12 @@ class ActionLog
         return $this->group;
     }
 
+    public function setGroup(Group $group): self
+    {
+        $this->group = $group;
+        return $this;
+    }
+
     public function getLogMessage(): string
     {
         return $this->log_message;
@@ -55,5 +61,11 @@ class ActionLog
     public function getTimestamp(): \DateTimeImmutable
     {
         return $this->timestamp;
+    }
+
+    public function setTimestamp(\DateTimeImmutable $timestamp): self
+    {
+        $this->timestamp = $timestamp;
+        return $this;
     }
 }
