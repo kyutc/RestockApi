@@ -70,6 +70,7 @@ class User
     {
         return password_hash($password, PASSWORD_ARGON2ID);
     }
+
     private function validatePasswordHash(string $password, string $passwordHash): bool
     {
         return password_verify($password, $passwordHash);
@@ -103,8 +104,13 @@ class User
         return $this;
     }
 
-    public function hasSession(string $token): bool {
-        if ($session = $this->sessions->get($token)){
+    public function hasSession(string $token): bool
+    {
+        if ($session = $this->sessions->findFirst(
+            function (int $key, Session $value) use ($token): bool {
+                return $value->getToken() == $token;
+            }
+        )) {
             $session->setLastUsedDate();
             return true;
         }
@@ -118,7 +124,7 @@ class User
 
     public function addRecipe(Recipe $recipe): self
     {
-        if (! $this->recipes->contains($recipe) ) {
+        if (!$this->recipes->contains($recipe)) {
             $this->recipes->add($recipe);
             $recipe->setUser($this);
         }
@@ -132,7 +138,8 @@ class User
         }
         return $this;
     }
-    public function createGroup(String $groupName): Group
+
+    public function createGroup(string $groupName): Group
     {
         return new Group($groupName, $this);
     }
