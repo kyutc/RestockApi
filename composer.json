@@ -18,5 +18,9 @@
             "Restock\\Controller\\": "src/Restock/Controller/",
             "Restock\\Entity\\": "src/Restock/Entity/"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10",
+        "symfony/http-client": "^6.3"
     }
 }
