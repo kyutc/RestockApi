@@ -18,7 +18,10 @@ class Group
     #[ORM\Column(length: 100)]
     private string $name;
 
-    #[ORM\OneToMany(mappedBy: 'group', targetEntity: GroupMember::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'group', targetEntity: GroupMember::class, cascade: [
+        'persist',
+        'remove'
+    ], orphanRemoval: true)]
     private Collection $group_members;
 
     #[ORM\OneToMany(mappedBy: 'group', targetEntity: Item::class, cascade: ['remove'], orphanRemoval: true)]
@@ -72,12 +75,31 @@ class Group
         return $this->history;
     }
 
-    public function createItem(string $itemName, string $description = '', string $category = ''): Item
-    {
-        $newItem = new Item($this, $itemName, $description, $category);
+    public function createItem(
+        string $itemName,
+        string $description = '',
+        string $category = 'default;#ffffff',
+        int $pantry_quantity = 0,
+        int $minimum_threshold = 0,
+        bool $auto_add_to_shopping_list = true,
+        int $shopping_list_quantity = 0,
+        bool $dont_add_to_pantry_on_purchase = false
+    ): Item {
+        $newItem = new Item(
+            $this,
+            $itemName,
+            $description,
+            $category,
+            $pantry_quantity,
+            $minimum_threshold,
+            $auto_add_to_shopping_list,
+            $shopping_list_quantity,
+            $dont_add_to_pantry_on_purchase
+        );
         $this->items->add($newItem);
         return $newItem;
     }
+
     public function removeItem(Item $item): self
     {
         $this->items->removeElement($item);
