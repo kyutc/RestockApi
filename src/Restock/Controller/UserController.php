@@ -4,24 +4,21 @@ declare(strict_types=1);
 
 namespace Restock\Controller;
 
+use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Restock\Entity\User;
 
-class Api
+class UserController
 {
     private \Restock\Db\UserAccount $userAccount;
+    private EntityManager $entityManager;
 
-    public function __construct(\Restock\Db\UserAccount $userAccount)
+    public function __construct(\Restock\Db\UserAccount $userAccount, EntityManager $entityManager)
     {
         $this->userAccount = $userAccount;
-    }
-
-    public function authTest(ServerRequestInterface $request): ResponseInterface
-    {
-        return new JsonResponse([
-            'messsage' => 'Seeing this means auth is successful',
-        ], 200);
+        $this->entityManager = $entityManager;
     }
 
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
@@ -33,13 +30,14 @@ class Api
         return new JsonResponse([], 200); // Username is not available
     }
 
-    public function registerNewUser(ServerRequestInterface $request): ResponseInterface
+    public function createUser(ServerRequestInterface $request): ResponseInterface
     {
         // TODO: Rate limiting and captcha.
         // TODO: Use tools instead of manually checking user input and creating errors
 
         $username = $request->getParsedBody()['username'];
         $password = $request->getParsedBody()['password'];
+        $email = $request->getParsedBody()['email'];
 
         // Consider: mb_strlen and is varchar/other data type multibyte aware in db?
         // TODO: Limit charset of username to A-Z, a-z, 0-9, -, _
@@ -47,6 +45,15 @@ class Api
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'Username must be between 3 and 30 characters.'
+            ],
+                400
+            );
+        }
+
+        if (! $this->userAccount->CheckUsernameAvailability($username) ) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Username is already taken.'
             ],
                 400
             );
@@ -61,9 +68,16 @@ class Api
             );
         }
 
-        $this->userAccount->CreateAccount($username, $password);
+        $user = new User($username, $password, $email);
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
         return new \Laminas\Diactoros\Response\JsonResponse(['result' => 'success'], 200);
+    }
+
+    public function editUser(ServerRequestInterface $request): ResponseInterface
+    {
+        throw new \Exception('Not implemented.');
     }
 
     public function userLogin(ServerRequestInterface $request): ResponseInterface
@@ -73,18 +87,19 @@ class Api
 
         $username = $request->getParsedBody()['username'];
         $password = $request->getParsedBody()['password'];
+        $email = $request->getParsedBody()['email'];
 
-        if (!is_string($username) || !is_string($password)) {
+        if (!is_string($username) || !is_string($password) || !is_string($email)) {
             return new JsonResponse([
                 'result' => 'error',
-                'message' => 'Invalid username or password.'
+                'message' => 'Invalid username, email, or password.'
             ],
                 401
             );
         }
 
         $token = '';
-        $result = $this->userAccount->Login($username, $password, $token);
+        $result = $this->userAccount->Login($email, $password, $token);
 
         if ($result) {
             return new JsonResponse([
@@ -97,7 +112,7 @@ class Api
 
         return new JsonResponse([
             'result' => 'error',
-            'message' => 'Invalid username or password.'
+            'message' => 'Invalid email or password.'
         ],
             401
         );
@@ -124,17 +139,17 @@ class Api
         );
     }
 
-    public function getUserAccount(ServerRequestInterface $request): ResponseInterface
+    public function getUser(ServerRequestInterface $request): ResponseInterface
     {
         throw new \Exception("Not implemented.");
     }
 
-    public function updateUserAccount(ServerRequestInterface $request): ResponseInterface
+    public function updateUser(ServerRequestInterface $request): ResponseInterface
     {
         throw new \Exception("Not implemented.");
     }
 
-    public function deleteUserAccount(ServerRequestInterface $request, array $args): ResponseInterface
+    public function deleteUser(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $token = $request->getHeader('X-RestockUserApiToken')[0];
         $user_id = (int)$args['user_id'];
@@ -155,45 +170,5 @@ class Api
         ],
             500
         );
-    }
-
-    public function getGroupDetails(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function createGroup(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function updateGroup(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function deleteGroup(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function getGroupMemberDetails(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function addGroupMember(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function updateGroupMember(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
-    }
-
-    public function deleteGroupMember(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception("Not implemented.");
     }
 }
