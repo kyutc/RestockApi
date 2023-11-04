@@ -9,7 +9,9 @@ require dirname(__DIR__).'../../vendor/autoload.php';
  * @var array $config
  */
 require dirname(__DIR__). '/config.default.php';
-require dirname(__DIR__). '/config.php';
+if (file_exists(dirname(__DIR__). '/config.php')) {
+    require dirname(__DIR__). '/config.php';
+}
 
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
