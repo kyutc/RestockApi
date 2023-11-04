@@ -74,22 +74,21 @@ $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(
 
 $responseFactory = new Laminas\Diactoros\ResponseFactory();
 $container = new League\Container\Container;
-$container->add(EntityManager::class, function (): EntityManager {
-    global $config;
-    $doctrine_config = ORMSetup::createAttributeMetadataConfiguration(
-        ['/src/Restock/Entity'],
-        $config['debug']
-    );
-    $connection = DriverManager::getConnection([
-        'driver' => 'pdo_mysql',
-        'user' => $config['database']['username'],
-        'password' => $config['database']['password'],
-        'dbname' => $config['database']['database']
-    ],
-        $doctrine_config
-    );
-    return new EntityManager($connection, $doctrine_config);
-});
+
+$doctrine_config = ORMSetup::createAttributeMetadataConfiguration(
+    ['/src/Restock/Entity'],
+    $config['debug']
+);
+$connection = DriverManager::getConnection([
+    'driver' => 'pdo_mysql',
+    'user' => $config['database']['username'],
+    'password' => $config['database']['password'],
+    'dbname' => $config['database']['database']
+],
+    $doctrine_config
+);
+$entityManager = new EntityManager($connection, $doctrine_config);
+$container->add(EntityManager::class, $entityManager);
 
 $userAccount = new UserAccount($db);
 $container->add(Restock\Controller\UserController::class)->addArgument($userAccount)->addArgument(EntityManager::class);
