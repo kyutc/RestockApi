@@ -127,7 +127,12 @@ class UserController
     {
         $token = $request->getHeader('X-RestockUserApiToken')[0];
 
-        if ($this->userAccount->Logout($token)) {
+        /** @var Session $session */
+        if ($session = $this->entityManager->getRepository('Restock\Entity\Session')->findOneBy(['token' => $token])) {
+            $user = $session->getUser();
+            $user->getSessions()->clear(); // Remove all associated sessions from this user
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
             return new JsonResponse([
                 'result' => 'success',
                 'message' => 'You have been logged out.'
@@ -138,7 +143,7 @@ class UserController
 
         return new JsonResponse([
             'result' => 'error',
-            'message' => 'Unknown error.'
+            'message' => 'Invalid token provided'
         ],
             500
         );
