@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Restock\Controller;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -125,28 +127,29 @@ class UserController
 
     public function userLogout(ServerRequestInterface $request): ResponseInterface
     {
-        $token = $request->getHeader('X-RestockUserApiToken')[0];
+        /** @var User $user */
+        $user = $_SESSION['user'];
+        $user->getSessions()->clear();
 
-        /** @var Session $session */
-        if ($session = $this->entityManager->getRepository('Restock\Entity\Session')->findOneBy(['token' => $token])) {
-            $user = $session->getUser();
-            $user->getSessions()->clear(); // Remove all associated sessions from this user
+        try {
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+        } catch (OptimisticLockException | ORMException $e) {
             return new JsonResponse([
-                'result' => 'success',
-                'message' => 'You have been logged out.'
+                'result' => 'error',
+                'message' => 'Failed when updating database'
             ],
-                200
+                500
             );
         }
 
         return new JsonResponse([
-            'result' => 'error',
-            'message' => 'Invalid token provided'
+            'result' => 'success',
+            'message' => 'You have been logged out.'
         ],
-            500
+            200
         );
+
     }
 
     public function getUser(ServerRequestInterface $request): ResponseInterface
