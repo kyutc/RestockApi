@@ -46,7 +46,13 @@ class User implements MiddlewareInterface
             ->getRepository('Restock\Entity\Session')
             ->findOneBy(['token' => $token])
         ) {
+            // Token is found
+            #TODO: check session age
+            $_SESSION['user'] = $session->getUser(); // The current user can be accessed whenever needed
             $session->setLastUsedDate();
+            $this->entityManager->persist($session);
+            $this->entityManager->flush();
+
             return $handler->handle($request);
         }
 
