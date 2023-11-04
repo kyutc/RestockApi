@@ -159,7 +159,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     );
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
-    ->middleware(new \Restock\Middleware\Auth\User($userAccount));
+    ->middleware(new \Restock\Middleware\Auth\User($container->get(EntityManager::class)));
 
 
 $response = $router->dispatch($request);
