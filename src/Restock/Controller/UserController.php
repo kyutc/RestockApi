@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Restock\Entity\Session;
 use Restock\Entity\User;
 
 class UserController
@@ -85,26 +86,30 @@ class UserController
         // TODO: Rate limiting
         // TODO: Token limiting ex. 10 before older tokens get replaced? Or allow no more than 1 token per user.
 
-        $username = $request->getParsedBody()['username'];
         $password = $request->getParsedBody()['password'];
         $email = $request->getParsedBody()['email'];
 
-        if (!is_string($username) || !is_string($password) || !is_string($email)) {
+        if (!is_string($password) || !is_string($email)) {
             return new JsonResponse([
                 'result' => 'error',
-                'message' => 'Invalid username, email, or password.'
+                'message' => 'Missing required field(s)'
             ],
                 401
             );
         }
 
-        $token = '';
-        $result = $this->userAccount->Login($email, $password, $token);
+        /** @var User $user */
+        if ($user = $this->entityManager->getRepository('Restock\Entity\User')->findOneBy(
+            ['email' => $email, 'password' => $password]
+        )) {
+            // Email and hashed password matches user entry
+            $session = new Session($user);
+            $this->entityManager->persist($session);
+            $this->entityManager->flush();
 
-        if ($result) {
             return new JsonResponse([
                 'result' => 'success',
-                'token' => $token
+                'token' => $session->getToken()
             ],
                 201
             );
