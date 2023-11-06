@@ -27,6 +27,9 @@ class User
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Session::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $sessions;
 
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: GroupMember::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $member_details;
+
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Recipe::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $recipes;
 
@@ -42,6 +45,7 @@ class User
         $this->password = $password; # Todo: hash password
         $this->email = $email;
         $this->sessions = new ArrayCollection();
+        $this->member_details = new ArrayCollection();
         $this->recipes = new ArrayCollection();
     }
 
@@ -102,6 +106,11 @@ class User
     {
         $this->sessions->add(new Session($this));
         return $this;
+    }
+
+    public function getMemberDetails(): Collection
+    {
+        return $this->member_details;
     }
 
     public function hasSession(string $token): bool

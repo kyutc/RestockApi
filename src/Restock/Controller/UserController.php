@@ -10,6 +10,8 @@ use Doctrine\ORM\OptimisticLockException;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Restock\Entity\Group;
+use Restock\Entity\GroupMember;
 use Restock\Entity\Session;
 use Restock\Entity\User;
 
@@ -58,7 +60,7 @@ class UserController
             );
         }
 
-        if (! $this->userAccount->CheckUsernameAvailability($username) ) {
+        if (!$this->userAccount->CheckUsernameAvailability($username)) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'Username is already taken.'
@@ -107,8 +109,18 @@ class UserController
 
         /** @var User $user */
         if ($user = $this->entityManager->getRepository('Restock\Entity\User')->findOneBy(
-            ['email' => $email, 'password' => $password]
+            ['email' => $email]
         )) {
+            // Validate stored password hash
+            if (!password_verify($password, $user->getPassword())) {
+                return new JsonResponse([
+                    'result' => 'error',
+                    'message' => 'Invalid email or password.'
+                ],
+                    401
+                );
+            }
+
             // Email and hashed password matches user entry
             $session = new Session($user);
             $this->entityManager->persist($session);
@@ -139,7 +151,7 @@ class UserController
         try {
             $this->entityManager->persist($user);
             $this->entityManager->flush();
-        } catch (OptimisticLockException | ORMException $e) {
+        } catch (OptimisticLockException|ORMException $e) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'Failed when updating database'
@@ -154,7 +166,6 @@ class UserController
         ],
             200
         );
-
     }
 
     public function getUser(ServerRequestInterface $request): ResponseInterface
@@ -169,24 +180,32 @@ class UserController
 
     public function deleteUser(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        $token = $request->getHeader('X-RestockUserApiToken')[0];
-        $user_id = (int)$args['user_id'];
+        /** @var User $user */
+        $user = $_SESSION['user'];
+        $owned_groups = $user->getMemberDetails()
+            ->filter(fn(GroupMember $group_member) => $group_member->getRole() === GroupMember::OWNER)
+            ->map(fn(GroupMember $group_member) => $group_member->getGroup());
 
-        if ($this->userAccount->DeleteAccount($user_id, $token)) {
+        try { // Delete each group where the user is the owner, then delete the user
+            foreach ($owned_groups as $g) {
+                $this->entityManager->remove($g);
+            }
+            $this->entityManager->remove($user);
+            $this->entityManager->flush();
+        } catch (ORMException $e) {
             return new JsonResponse([
-                'result' => 'success',
-                'message' => 'Account has been deleted.'
+                'result' => 'error',
+                'message' => 'Failed to delete account.'
             ],
-                200
+                500
             );
         }
 
-        // See comments in "DeleteAccount" in short: need better auth flow and error checking and reporting flow
         return new JsonResponse([
-            'result' => 'error',
-            'message' => 'Failed to delete account.'
+            'result' => 'success',
+            'message' => 'Account has been deleted.'
         ],
-            500
+            200
         );
     }
 }
