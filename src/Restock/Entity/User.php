@@ -24,7 +24,10 @@ class User
     #[ORM\Column(length: 255)]
     private string $email;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Session::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Session::class, cascade: [
+        'persist',
+        'remove'
+    ], orphanRemoval: true)]
     private Collection $sessions;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Recipe::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
@@ -39,7 +42,7 @@ class User
     public function __construct(string $name, string $password, string $email)
     {
         $this->name = $name;
-        $this->password = $password; # Todo: hash password
+        $this->password = $this->createPasswordHash($password);
         $this->email = $email;
         $this->sessions = new ArrayCollection();
         $this->recipes = new ArrayCollection();

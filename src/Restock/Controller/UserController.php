@@ -53,7 +53,7 @@ class UserController
             );
         }
 
-        if (! $this->userAccount->CheckUsernameAvailability($username) ) {
+        if (!$this->userAccount->CheckUsernameAvailability($username)) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'Username is already taken.'
@@ -102,8 +102,18 @@ class UserController
 
         /** @var User $user */
         if ($user = $this->entityManager->getRepository('Restock\Entity\User')->findOneBy(
-            ['email' => $email, 'password' => $password]
+            ['email' => $email]
         )) {
+            // Validate stored password hash
+            if (!password_verify($password, $user->getPassword())) {
+                return new JsonResponse([
+                    'result' => 'error',
+                    'message' => 'Invalid email or password.'
+                ],
+                    401
+                );
+            }
+
             // Email and hashed password matches user entry
             $session = new Session($user);
             $this->entityManager->persist($session);
@@ -134,7 +144,7 @@ class UserController
         try {
             $this->entityManager->persist($user);
             $this->entityManager->flush();
-        } catch (OptimisticLockException | ORMException $e) {
+        } catch (OptimisticLockException|ORMException $e) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'Failed when updating database'
@@ -149,7 +159,6 @@ class UserController
         ],
             200
         );
-
     }
 
     public function getUser(ServerRequestInterface $request): ResponseInterface
