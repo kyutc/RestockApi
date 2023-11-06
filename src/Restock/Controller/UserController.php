@@ -24,6 +24,11 @@ class UserController
         $this->entityManager = $entityManager;
     }
 
+    public function authTest(ServerRequestInterface $request): ResponseInterface
+    {
+        return new JsonResponse(['result' => 'success'], 200); // Provided session is valid
+    }
+
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
     {
         if ($this->userAccount->CheckUsernameAvailability($args['username'])) {
