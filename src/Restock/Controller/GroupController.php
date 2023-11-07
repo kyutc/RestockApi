@@ -485,4 +485,69 @@ class GroupController
             500
         );
     }
+
+    public function getGroupMembers(ServerRequestInterface $request, array $args): ResponseInterface
+    {
+        $group_id = $args['group_id'] ?? '';
+        /** @var \Restock\Entity\User $user */
+        $user = $_SESSION['user'];
+
+        if (empty($group_id)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Required parameter missing.'
+            ],
+                400
+            );
+        }
+
+        $user_groups = $user->getMemberDetails();
+
+        $member = false;
+        foreach ($user_groups as $group) {
+            if ($group->getGroup()->getId() == $group_id) {
+                $member = true;
+                break;
+            }
+        }
+
+        if (!$member) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You are not a member of this group, or the group does not exist.'
+            ],
+                400
+            );
+        }
+
+        /** @var \Restock\Entity\Group $group */
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
+        /** @var \Restock\Entity\GroupMember[] $members */
+        $members = $group->getGroupMembers();
+
+        $result = array();
+        foreach ($members as $member) {
+            $role = $this->entityManager->createQueryBuilder()
+                ->select('gm.role')
+                ->from('\Restock\Entity\GroupMember', 'gm')
+                ->where('gm.user = :user_id')
+                ->andWhere('gm.group = :group_id')
+                ->setParameter(':user_id', $member->getUser()->getId())
+                ->setParameter(':group_id', $group_id)
+                ->getQuery()->execute();
+
+            $result[] = [
+                'id' => $member->getId(),
+                'name' => $member->getUser()->getName(),
+                'role' => $role,
+            ];
+        }
+
+        return new JsonResponse([
+            'result' => 'success',
+            'data' => $result
+        ],
+            200
+        );
+    }
 }

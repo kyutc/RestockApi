@@ -153,6 +153,11 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
 
     $route->map(
         'GET',
+        '/group/{group_id:number}/member',
+        [Restock\Controller\GroupController::class, 'getGroupMembers']
+    );
+    $route->map(
+        'GET',
         '/group/{group_id:number}/member/{user_id:number}',
         [Restock\Controller\GroupController::class, 'getGroupMemberDetails']
     );
