@@ -18,9 +18,52 @@ class GroupController
         $this->entityManager = $entityManager;
     }
 
-    public function getGroupDetails(ServerRequestInterface $request): ResponseInterface
+    public function getGroupDetails(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        $group_id = $args['group_id'] ?? '';
+
+        if (empty($group_id)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Required parameter missing.'
+            ],
+                400
+            );
+        }
+
+        /** @var \Restock\Entity\User $user */
+        $user = $_SESSION['user'];
+        /** @var \Restock\Entity\GroupMember[] $user_groups */
+        // There is surely a less strange way to do this
+        $user_groups = $user->getMemberDetails();
+
+        $member = false;
+        foreach ($user_groups as $group) {
+            if ($group->getGroup()->getId() == $group_id) {
+                $member = true;
+                break;
+            }
+        }
+
+        if (!$member) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to view this group.'
+            ],
+                403
+            );
+        }
+        /** @var \Restock\Entity\Group $group */
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);;
+
+        return new JsonResponse([
+            'result' => 'success',
+            'data' => [
+                'name' => $group->getName(),
+            ]
+        ],
+            200
+        );
     }
 
     public function createGroup(ServerRequestInterface $request): ResponseInterface
