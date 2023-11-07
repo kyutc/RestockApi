@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Restock\Controller;
 
+use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class GroupController
 {
-    private \Restock\Group\Group $group;
+    private EntityManager $entityManager;
 
-    public function __construct(\Restock\Group\Group $group)
+    public function __construct(EntityManager $entityManager)
     {
-        $this->group = $group;
+        $this->entityManager = $entityManager;
     }
 
     public function getGroupDetails(ServerRequestInterface $request): ResponseInterface
@@ -24,7 +25,22 @@ class GroupController
 
     public function createGroup(ServerRequestInterface $request): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        /** @var \Restock\Entity\User $owner */
+        $owner = $_SESSION['user'];
+        $name = $request->getParsedBody()['name'] ?? '';
+
+        // TODO: Duplicate group name error
+        $group = new \Restock\Entity\Group($name, $owner);
+        $this->entityManager->persist($group);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => 'success',
+            'message' => 'Group has been created.',
+            'id' => $group->getId()
+        ],
+            201
+        );
     }
 
     public function updateGroup(ServerRequestInterface $request): ResponseInterface
@@ -32,9 +48,30 @@ class GroupController
         throw new \Exception("Not implemented.");
     }
 
-    public function deleteGroup(ServerRequestInterface $request): ResponseInterface
+    public function deleteGroup(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        $group_id = $args['group_id'] ?? '';
+        /** @var \Restock\Entity\Group $group */
+        if ($group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(
+            ['id' => $group_id]
+        )) {
+            $this->entityManager->remove($group);
+            $this->entityManager->flush($group);
+
+            return new JsonResponse([
+                'result' => 'success',
+                'message' => 'Group has been deleted.'
+            ],
+                200
+            );
+        }
+
+        return new JsonResponse([
+            'result' => 'success',
+            'message' => 'Error deleting group.'
+        ],
+            500
+        );
     }
 
     public function getGroupMemberDetails(ServerRequestInterface $request): ResponseInterface

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-require dirname(__DIR__).'../../vendor/autoload.php';
+require dirname(__DIR__) . '../../vendor/autoload.php';
 // TODO: Use a config library instead?
 // Possible option: https://config.thephpleague.com/1.1/
 /**
  * @var array $config
  */
-require dirname(__DIR__). '/config.default.php';
-if (file_exists(dirname(__DIR__). '/config.php')) {
-    require dirname(__DIR__). '/config.php';
+require dirname(__DIR__) . '/config.default.php';
+if (file_exists(dirname(__DIR__) . '/config.php')) {
+    require dirname(__DIR__) . '/config.php';
 }
 
 use Doctrine\DBAL\DriverManager;
@@ -93,6 +93,8 @@ $container->add(EntityManager::class, $entityManager);
 $userAccount = new UserAccount($db);
 $container->add(Restock\Controller\UserController::class)->addArgument($userAccount)->addArgument(EntityManager::class);
 $container->add(UserAccount::class);
+
+$container->add(Restock\Controller\GroupController::class)->addArgument(EntityManager::class);
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch ($request->getHeader('Accept')[0]) {
     case "application/json":
@@ -122,7 +124,11 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('POST', '/session', [Restock\Controller\UserController::class, 'userLogin']);
     $route->map('POST', '/user', [Restock\Controller\UserController::class, 'createUser']);
 
-    $route->map('HEAD', '/user/{username:username}', [Restock\Controller\UserController::class, 'checkUsernameAvailable']);
+    $route->map(
+        'HEAD',
+        '/user/{username:username}',
+        [Restock\Controller\UserController::class, 'checkUsernameAvailable']
+    );
 })->middleware(new \Restock\Middleware\Auth\Api());
 
 // API endpoints which require user authentication
@@ -141,13 +147,25 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
 //    $route->map('GET', '/group/{group_id:number}/history', [Restock\Controller\GroupController::class, 'getGroupActionLog']);
 //    $route->map('GET', '/join/{invite_id:number}', [Restock\Controller\GroupController::class, 'fetchGroupInvite']);
 //    $route->map('POST', '/join/{invite_id:number}', [Restock\Controller\GroupController::class, 'acceptGroupInvite']);
-    $route->map('POST', '/group/{group_id:number}', [Restock\Controller\GroupController::class, 'createGroup']);
+    $route->map('POST', '/group', [Restock\Controller\GroupController::class, 'createGroup']);
     $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\GroupController::class, 'updateGroup']);
     $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\GroupController::class, 'deleteGroup']);
 
-    $route->map('GET', '/group/{group_id:number}/member/{user_id:number}', [Restock\Controller\GroupController::class, 'getGroupMemberDetails']);
-    $route->map('PUT', '/group/{group_id:number}/member/{user_id:number}', [Restock\Controller\GroupController::class, 'updateGroupMember']);
-    $route->map('DELETE', '/group/{group_id:number}/member/{user_id:number}', [Restock\Controller\GroupController::class, 'deleteGroupMember']);
+    $route->map(
+        'GET',
+        '/group/{group_id:number}/member/{user_id:number}',
+        [Restock\Controller\GroupController::class, 'getGroupMemberDetails']
+    );
+    $route->map(
+        'PUT',
+        '/group/{group_id:number}/member/{user_id:number}',
+        [Restock\Controller\GroupController::class, 'updateGroupMember']
+    );
+    $route->map(
+        'DELETE',
+        '/group/{group_id:number}/member/{user_id:number}',
+        [Restock\Controller\GroupController::class, 'deleteGroupMember']
+    );
 
     $route->map('GET', '/item/{item_id:number}', [Restock\Controller\ItemController::class, 'getItemDetails']);
     $route->map('POST', '/item', [Restock\Controller\ItemController::class, 'createItem']);
