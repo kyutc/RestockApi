@@ -60,10 +60,10 @@ class UserController
             );
         }
 
-        if (!$this->userAccount->CheckUsernameAvailability($username)) {
+        if ($this->entityManager->getRepository('Restock\Entity\User')->findBy(['email' => $email])) {
             return new JsonResponse([
                 'result' => 'error',
-                'message' => 'Username is already taken.'
+                'message' => 'Email is already in use.'
             ],
                 400
             );
