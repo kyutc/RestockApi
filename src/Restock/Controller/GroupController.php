@@ -280,11 +280,10 @@ class GroupController
         /** @var \Restock\Entity\User $user */
         $user = $_SESSION['user'];
 
-        if (true && empty($group_id) || empty($user_id)) {
+        if (empty($group_id) || empty($user_id)) {
             return new JsonResponse([
                 'result' => 'error',
-                'message' => 'Required parameter missing.',
-                'debug' => $user_id . ', ' . $group_id
+                'message' => 'Required parameter missing.'
             ],
                 400
             );
