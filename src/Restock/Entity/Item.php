@@ -148,5 +148,23 @@ class Item
         return $this;
     }
 
+    public function __toString(): string
+    {
+        // Convert the item to an associative array
+        $itemData = [
+            'group_id' => $this->getGroup()->getId(),
+            'name' => $this->getName(),
+            'description' => $this->getDescription(),
+            'category' => $this->getCategory(),
+            'pantry_quantity' => $this->getPantryQuantity(),
+            'minimum_threshold' => $this->getMinimumThreshold(),
+            'auto_add_to_shopping_list' => $this->isAutoAddToShoppingList(),
+            'shopping_list_quantity' => $this->getShoppingListQuantity(),
+            'auto_add_to_pantry' => $this->isDontAddToPantryOnPurchase(),
+        ];
+
+        return json_encode($itemData);
+    }
+
 
 }
