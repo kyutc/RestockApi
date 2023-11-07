@@ -157,6 +157,11 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
         [Restock\Controller\GroupController::class, 'getGroupMemberDetails']
     );
     $route->map(
+        'POST',
+        '/group/{group_id:number}/member',
+        [Restock\Controller\GroupController::class, 'addGroupMember']
+    );
+    $route->map(
         'PUT',
         '/group/{group_id:number}/member/{user_id:number}',
         [Restock\Controller\GroupController::class, 'updateGroupMember']

@@ -181,9 +181,91 @@ class GroupController
         throw new \Exception("Not implemented.");
     }
 
-    public function addGroupMember(ServerRequestInterface $request): ResponseInterface
+    public function addGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        $group_id = $args['group_id'] ?? '';
+        $user_id = $request->getParsedBody()['user_id'] ?? '';
+        $role = $request->getParsedBody()['role'] ?? '';
+        /** @var \Restock\Entity\User $user */
+        $user = $_SESSION['user'];
+
+        if (empty($group_id) || empty($user_id) || !is_string($user_id) || empty($role) || !is_string($role)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Required parameter missing.'
+            ],
+                400
+            );
+        }
+
+        if ($role == \Restock\Entity\GroupMember::OWNER) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'There can only be one owner of a group.'
+            ],
+                400
+            );
+        }
+
+        /** @var \Restock\Entity\GroupMember[] $user_groups */
+        // There is surely a less strange way to do this
+        $user_groups = $user->getMemberDetails();
+
+        $owner = false;
+        $member = false;
+        foreach ($user_groups as $group) {
+            if ($group->getGroup()->getId() == $group_id) {
+                $member = true; // Member in the sense that they exist as part of the group
+                $owner = $group->getRole() == \Restock\Entity\GroupMember::OWNER;
+                break;
+            }
+        }
+
+        if ($member && !$owner) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to add members to this group.'
+            ],
+                403
+            );
+        }
+
+        if (!$member) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You are not a member of this group, or the group does not exist.'
+            ],
+                400
+            );
+        }
+
+        /** @var \Restock\Entity\Group $group */
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
+        /** @var \Restock\Entity\User $adding_user */
+        $adding_user = $this->entityManager->getRepository('\Restock\Entity\User')->findOneBy(['id' => $user_id]);
+        $group_member = new \Restock\Entity\GroupMember($group, $adding_user);
+
+        // TODO: Duplicate group member entries should not be possible. A joint unique constraint can be added to the database for this.
+        try {
+            $this->entityManager->persist($group_member);
+            $this->entityManager->flush($group_member);
+        } catch (\InvalidArgumentException) {
+            // TODO: Generic exception should ideally be replaced with a specific one to catch for this situation
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Invalid role for user.'
+            ],
+                400
+            );
+        }
+
+        return new JsonResponse([
+            'result' => 'success',
+            'message' => 'Group member added.',
+            'id' => $group_member->getId()
+        ],
+            201
+        );
     }
 
     public function updateGroupMember(ServerRequestInterface $request): ResponseInterface
@@ -191,8 +273,75 @@ class GroupController
         throw new \Exception("Not implemented.");
     }
 
-    public function deleteGroupMember(ServerRequestInterface $request): ResponseInterface
+    public function deleteGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        $group_id = $args['group_id'] ?? '';
+        $user_id = $args['user_id'] ?? '';
+        /** @var \Restock\Entity\User $user */
+        $user = $_SESSION['user'];
+
+        if (true && empty($group_id) || empty($user_id)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Required parameter missing.',
+                'debug' => $user_id . ', ' . $group_id
+            ],
+                400
+            );
+        }
+
+        /** @var \Restock\Entity\GroupMember[] $user_groups */
+        // There is surely a less strange way to do this
+        $user_groups = $user->getMemberDetails();
+
+        $owner = false;
+        $member = false;
+        foreach ($user_groups as $group) {
+            if ($group->getGroup()->getId() == $group_id) {
+                $member = true; // Member in the sense that they exist as part of the group
+                $owner = $group->getRole() == \Restock\Entity\GroupMember::OWNER;
+                break;
+            }
+        }
+
+        if ($member && !$owner) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to remove members from this group.'
+            ],
+                403
+            );
+        }
+
+        if (!$member) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You are not a member of this group, or the group does not exist.'
+            ],
+                400
+            );
+        }
+
+        /** @var \Restock\Entity\GroupMember $group_member */
+        if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+            ['group' => $group_id, 'user' => $user_id]
+        )) {
+            $this->entityManager->remove($group_member);
+            $this->entityManager->flush($group_member);
+
+            return new JsonResponse([
+                'result' => 'success',
+                'message' => 'Member removed from group.'
+            ],
+                200
+            );
+        }
+
+        return new JsonResponse([
+            'result' => 'error',
+            'message' => 'Error removing member from group.'
+        ],
+            500
+        );
     }
 }
