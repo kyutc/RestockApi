@@ -90,6 +90,28 @@ $connection = DriverManager::getConnection([
 $entityManager = new EntityManager($connection, $doctrine_config);
 $container->add(EntityManager::class, $entityManager);
 
+/** @var \Restock\Entity\User $user */
+$user = null;
+if ($request->hasHeader('X-RestockUserApiToken')) {
+    $token = $request->getHeader('X-RestockUserApiToken')[0];
+    /** @var Session $session */
+    if ($session = $entityManager->getRepository('Restock\Entity\Session')->findOneBy(['token' => $token])) {
+        // Token is found
+        #TODO: check session age
+        $user = $session->getUser();
+        $session->setLastUsedDate();
+        $entityManager->persist($session);
+        $entityManager->flush();
+    }
+}
+
+$userAccount = new UserAccount($db);
+$container->add(Restock\Controller\UserController::class)
+    ->addArgument($userAccount)
+    ->addArgument(EntityManager::class)
+    ->addArgument($user);
+$container->add(UserAccount::class);
+
 $userAccount = new UserAccount($db);
 $container->add(Restock\Controller\UserController::class)->addArgument($userAccount)->addArgument(EntityManager::class);
 $container->add(UserAccount::class);
@@ -160,7 +182,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('DELETE', '/recipe', [Restock\Controller\RecipeController::class, 'deleteRecipe']);
 })
     ->middleware(new \Restock\Middleware\Auth\Api())
-    ->middleware(new \Restock\Middleware\Auth\User($container->get(EntityManager::class)));
+    ->middleware(new \Restock\Middleware\Auth\User($user));
 
 
 $response = $router->dispatch($request);

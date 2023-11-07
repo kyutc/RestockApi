@@ -20,42 +20,27 @@ class User implements MiddlewareInterface
      * Used to authenticate and grant permissions to users who have logged in.
      */
 
-    private EntityManager $entityManager;
+    private ?\Restock\Entity\User $user;
 
-    public function __construct(EntityManager $entityManager)
+    public function __construct(?\Restock\Entity\User $user)
     {
-        $this->entityManager = $entityManager;
+        $this->user = $user;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $token = $request->getHeader('X-RestockUserApiToken')[0];
-        if (!$token) {
+        if (is_null($this->user)) {
             // Session header not defined or field not provided
             return new JsonResponse(
                 [
                     'result' => 'error',
-                    'message' => 'Missing header(s)'
+                    'message' => 'Failed to authenticate'
                 ],
                 403
             );
         }
 
-        /** @var Session $session */
-        if ($session = $this->entityManager
-            ->getRepository('Restock\Entity\Session')
-            ->findOneBy(['token' => $token])
-        ) {
-            // Token is found
-            #TODO: check session age
-            $_SESSION['user'] = $session->getUser(); // The current user can be accessed whenever needed
-            $session->setLastUsedDate();
-            $this->entityManager->persist($session);
-            $this->entityManager->flush();
-
-            return $handler->handle($request);
-        }
-
-        return new JsonResponse(['result' => 'error', 'message' => 'Unauthenticated user.'], 403);
+        $_SESSION['user'] = $this->user;
+        return $handler->handle($request);
     }
 }
