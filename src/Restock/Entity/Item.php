@@ -42,12 +42,19 @@ class Item
     #[ORM\Column]
     private bool $dont_add_to_pantry_on_purchase = false;
 
-    public function __construct(Group $group, string $name, string $description = '', string $category = '')
+    public function __construct(Group $group, string $name, string $description = '', string $category = '',
+                                int $pantry_quantity = 0, int $minimum_threshold = 0, bool $auto_add_to_shopping_list = false,
+                                int $shopping_list_quantity = 0, bool $dont_add_to_pantry_on_purchase = false)
     {
         $this->group = $group;
         $this->name = $name;
         $this->description = $description;
         $this->category = $category;
+        $this->pantry_quantity = $pantry_quantity;
+        $this->minimum_threshold = $minimum_threshold;
+        $this->auto_add_to_shopping_list = $auto_add_to_shopping_list;
+        $this->shopping_list_quantity = $shopping_list_quantity;
+        $this->dont_add_to_pantry_on_purchase = $dont_add_to_pantry_on_purchase;
     }
 
     public function getId(): ?int
@@ -162,6 +169,8 @@ class Item
             'shopping_list_quantity' => $this->getShoppingListQuantity(),
             'auto_add_to_pantry' => $this->isDontAddToPantryOnPurchase(),
         ];
+
+        $itemData = [$this->id => $itemData];
 
         return json_encode($itemData);
     }
