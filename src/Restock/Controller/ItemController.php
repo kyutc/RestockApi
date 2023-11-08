@@ -84,7 +84,6 @@ class ItemController
 
         $entityManager->flush();
 
-        // Return a JSON response with the updated items and their properties.
         $response = [
             'result' => 'success',
             'items' => $updatedItems,
@@ -95,12 +94,56 @@ class ItemController
 
     public function deleteItem(ServerRequestInterface $request): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        // Assuming the request body contains the JSON data with item IDs to delete.
+        $data = json_decode($request->getBody(), true);
+
+        $entityManager = $this->entityManager;
+
+        // Delete specified Item entities.
+        $deletedItems = [];
+        foreach ($data['itemIds'] as $itemId) {
+            $item = $entityManager->getRepository(Item::class)->find($itemId);
+
+            if ($item) {
+                $entityManager->remove($item);
+                $deletedItems[] = $itemId;
+            }
+        }
+
+        $entityManager->flush();
+
+        // Return a JSON response indicating the deleted item IDs.
+        $response = [
+            'result' => 'success',
+            'deleted_items' => $deletedItems,
+        ];
+
+        return new JsonResponse($response, 200);
     }
 
     public function getItemDetails(ServerRequestInterface $request): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        // Extract the group ID from the request, assuming it's part of the URL or request parameters.
+        $groupId = $request->getAttribute('group_id');
+
+        $entityManager = $this->entityManager;
+
+        // Retrieve all items for the specified group.
+        $items = $entityManager->getRepository(Item::class)->findBy(['group' => $groupId]);
+
+        // Convert the items to an associative array and format them using __toString.
+        $formattedItems = [];
+        foreach ($items as $item) {
+            $formattedItems[$item->getId()] = json_decode($item->__toString(), true);
+        }
+
+        // Return a JSON response with the group's items and their properties.
+        $response = [
+            'result' => 'success',
+            'items' => $formattedItems,
+        ];
+
+        return new JsonResponse($response, 200);
     }
 
 }
