@@ -539,7 +539,7 @@ class GroupController
             $result[] = [
                 'id' => $member->getId(),
                 'name' => $member->getUser()->getName(),
-                'role' => $role,
+                'role' => $role[0]['role'],
             ];
         }
 
