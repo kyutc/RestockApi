@@ -17,13 +17,13 @@ use Restock\Entity\User;
 
 class UserController
 {
-    private \Restock\Db\UserAccount $userAccount;
     private EntityManager $entityManager;
+    private ?User $user;
 
-    public function __construct(\Restock\Db\UserAccount $userAccount, EntityManager $entityManager)
+    public function __construct(EntityManager $entityManager, ?User $user)
     {
-        $this->userAccount = $userAccount;
         $this->entityManager = $entityManager;
+        $this->user = $user;
     }
 
     public function authTest(ServerRequestInterface $request): ResponseInterface
@@ -33,7 +33,7 @@ class UserController
 
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        if ($this->userAccount->CheckUsernameAvailability($args['username'])) {
+        if (!$this->entityManager->getRepository('Restock\Entity\User')->findOneBy(['username' => $args['username']])) {
             return new JsonResponse([], 404); // Username is available
         }
 
@@ -144,8 +144,7 @@ class UserController
 
     public function userLogout(ServerRequestInterface $request): ResponseInterface
     {
-        /** @var User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
         $user->getSessions()->clear();
 
         try {
@@ -180,8 +179,7 @@ class UserController
 
     public function deleteUser(ServerRequestInterface $request, array $args): ResponseInterface
     {
-        /** @var User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
         $owned_groups = $user->getMemberDetails()
             ->filter(fn(GroupMember $group_member) => $group_member->getRole() === GroupMember::OWNER)
             ->map(fn(GroupMember $group_member) => $group_member->getGroup());

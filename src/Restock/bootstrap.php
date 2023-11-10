@@ -28,6 +28,7 @@ use Monolog\Handler\StreamHandler;
 
 use Restock\Db\UserAccount;
 use Restock\Controller;
+use Restock\Entity\Session;
 
 // Error handler and logger.
 $json_formatter = new JsonFormatter();
@@ -105,16 +106,9 @@ if ($request->hasHeader('X-RestockUserApiToken')) {
     }
 }
 
-$userAccount = new UserAccount($db);
 $container->add(Restock\Controller\UserController::class)
-    ->addArgument($userAccount)
     ->addArgument(EntityManager::class)
     ->addArgument($user);
-$container->add(UserAccount::class);
-
-$userAccount = new UserAccount($db);
-$container->add(Restock\Controller\UserController::class)->addArgument($userAccount)->addArgument(EntityManager::class);
-$container->add(UserAccount::class);
 // Require only a supported content-type to be requested. Right now that means only JSON.
 switch ($request->getHeader('Accept')[0]) {
     case "application/json":
