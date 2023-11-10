@@ -9,22 +9,24 @@ use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Restock\Entity\Group;
 use Restock\Entity\Item;
+use Restock\Entity\User;
 
 class ItemController
 {
-    private \Restock\Db\Item $item;
     private EntityManager $entityManager;
+    private User $user;
 
-    public function __construct(\Restock\Db\Item $item, EntityManager $entityManager)
+    public function __construct(EntityManager $entityManager, User $user)
     {
-        $this->item = $item;
         $this->entityManager = $entityManager;
+        $this->user = $user;
     }
 
     public function createItem(ServerRequestInterface $request): ResponseInterface
     {
-        $data = json_decode($request->getBody(), true);
+        $data = json_decode($request->getBody()->getContents(), true);
 
         $groupId = $data['groupId'];
 
@@ -57,7 +59,7 @@ class ItemController
     public function updateItem(ServerRequestInterface $request): ResponseInterface
     {
         // Assuming the request body contains the JSON data.
-        $data = json_decode($request->getBody(), true);
+        $data = json_decode($request->getBody()->getContents(), true);
 
         $entityManager = $this->entityManager;
 
@@ -95,7 +97,7 @@ class ItemController
     public function deleteItem(ServerRequestInterface $request): ResponseInterface
     {
         // Assuming the request body contains the JSON data with item IDs to delete.
-        $data = json_decode($request->getBody(), true);
+        $data = json_decode($request->getBody()->getContents(), true);
 
         $entityManager = $this->entityManager;
 

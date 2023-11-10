@@ -8,14 +8,18 @@ use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Restock\Entity\User;
 
 class GroupController
 {
     private EntityManager $entityManager;
+    private User $user;
 
-    public function __construct(EntityManager $entityManager)
+
+    public function __construct(EntityManager $entityManager, User $user)
     {
         $this->entityManager = $entityManager;
+        $this->user = $user;
     }
 
     public function getGroupDetails(ServerRequestInterface $request, array $args): ResponseInterface
@@ -31,8 +35,7 @@ class GroupController
             );
         }
 
-        /** @var \Restock\Entity\User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
 
         $role = $user->getMemberDetails()->findFirst(
             fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
@@ -61,8 +64,7 @@ class GroupController
 
     public function createGroup(ServerRequestInterface $request): ResponseInterface
     {
-        /** @var \Restock\Entity\User $owner */
-        $owner = $_SESSION['user'];
+        $owner = $this->user;
         $name = $request->getParsedBody()['name'] ?? '';
 
         // TODO: Duplicate group name error
@@ -93,8 +95,7 @@ class GroupController
             );
         }
 
-        /** @var \Restock\Entity\User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
 
         $role = $user->getMemberDetails()->findFirst(
             fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
@@ -146,8 +147,7 @@ class GroupController
     {
         $group_id = $args['group_id'] ?? '';
 
-        /** @var \Restock\Entity\User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
 
         $role = $user->getMemberDetails()->findFirst(
             fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
@@ -204,8 +204,7 @@ class GroupController
         $group_id = $args['group_id'] ?? '';
         $user_id = $request->getParsedBody()['user_id'] ?? '';
         $new_role = $request->getParsedBody()['role'] ?? '';
-        /** @var \Restock\Entity\User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
 
         if (empty($group_id) || empty($user_id) || !is_string($user_id) || empty($new_role) || !is_string($new_role)) {
             return new JsonResponse([
@@ -281,8 +280,7 @@ class GroupController
         $group_id = $args['group_id'] ?? '';
         $user_id = $args['user_id'] ?? '';
         $new_role = $request->getQueryParams()['role'] ?? '';
-        /** @var \Restock\Entity\User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
 
         if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
             return new JsonResponse([
@@ -374,8 +372,7 @@ class GroupController
     {
         $group_id = $args['group_id'] ?? '';
         $user_id = $args['user_id'] ?? '';
-        /** @var \Restock\Entity\User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
 
         if (empty($group_id) || empty($user_id)) {
             return new JsonResponse([
@@ -435,8 +432,7 @@ class GroupController
     public function getGroupMembers(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
-        /** @var \Restock\Entity\User $user */
-        $user = $_SESSION['user'];
+        $user = $this->user;
 
         if (empty($group_id)) {
             return new JsonResponse([

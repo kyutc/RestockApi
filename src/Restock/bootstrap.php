@@ -105,6 +105,18 @@ if ($request->hasHeader('X-RestockUserApiToken')) {
     }
 }
 
+$container->add(Restock\Controller\ActionLoggerController::class)
+    ->addArgument(EntityManager::class)
+    ->addArgument($user);
+$container->add(Restock\Controller\GroupController::class)
+    ->addArgument(EntityManager::class)
+    ->addArgument($user);
+$container->add(Restock\Controller\RecipeController::class)
+    ->addArgument(EntityManager::class)
+    ->addArgument($user);
+$container->add(Restock\Controller\ItemController::class)
+    ->addArgument(EntityManager::class)
+    ->addArgument($user);
 $container->add(Restock\Controller\UserController::class)
     ->addArgument(EntityManager::class)
     ->addArgument($user);

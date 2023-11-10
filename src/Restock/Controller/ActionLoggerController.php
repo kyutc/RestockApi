@@ -11,12 +11,15 @@ use Psr\Http\Message\ServerRequestInterface;
 use Restock\Entity\ActionLog;
 use Doctrine\ORM\EntityManager;
 Use Exception;
+use Restock\Entity\User;
 
 class ActionLoggerController {
     private EntityManager $entityManager;
+    private User $user;
 
-    public function __construct(EntityManager $entityManager) {
+    public function __construct(EntityManager $entityManager, User $user) {
         $this->entityManager = $entityManager;
+        $this->user = $user;
     }
 
     public function getActionLog(ServerRequestInterface $request): ResponseInterface {

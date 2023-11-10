@@ -15,16 +15,17 @@ Use Exception;
 
 class RecipeController {
     private EntityManager $entityManager;
+    private User $user;
 
-    public function __construct(EntityManager $entityManager) {
+    public function __construct(EntityManager $entityManager, User $user) {
         $this->entityManager = $entityManager;
+        $this->user = $user;
     }
 
     public function createRecipe(ServerRequestInterface $request): ResponseInterface {
         try {
             $data = $request->getParsedBody();
-            $userId = $data['user_id'];
-            $user = $this->entityManager->find(User::class, $userId);
+            $user = $this->user;
             $recipe = new Recipe($user, 'recipe name', 'recipe instructions');
             $recipe->setUser($user);
             $recipe->setName($data['recipe_name']);
