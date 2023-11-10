@@ -26,11 +26,35 @@ class UserController
         $this->user = $user;
     }
 
+    /**
+     * Query whether a session is valid or not.
+     *  i.e. Is the user logged in?
+     *
+     * GET /authTest
+     * X-RestockUserApiToken: {token}
+     * X-RestockApiToken: anything
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     */
     public function authTest(ServerRequestInterface $request): ResponseInterface
     {
         return new JsonResponse(['result' => 'success'], 200); // Provided session is valid
     }
 
+    /**
+     * Check whether a username exists.
+     *
+     * HEAD /user/{username:username}
+     *
+     * @REFACTOR    emails are the only unique user account property.
+     *              Refactor this method and the route to see if an email is in use.
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     */
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
     {
         if (!$this->entityManager->getRepository('Restock\Entity\User')->findOneBy(['username' => $args['username']])) {
@@ -40,6 +64,23 @@ class UserController
         return new JsonResponse([], 200); // Username is not available
     }
 
+    /**
+     * Register a new User.
+     *
+     * POST /user
+     * X-RestockUserApiToken: {token}
+     * X-RestockApiToken: anything
+     * Content:
+     *  email={user's email}
+     *  username={new username}
+     *  password={new password}
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     */
     public function createUser(ServerRequestInterface $request): ResponseInterface
     {
         // TODO: Rate limiting and captcha.
@@ -85,11 +126,23 @@ class UserController
         return new \Laminas\Diactoros\Response\JsonResponse(['result' => 'success'], 200);
     }
 
-    public function editUser(ServerRequestInterface $request): ResponseInterface
-    {
-        throw new \Exception('Not implemented.');
-    }
 
+    /**
+     * Create a new session.
+     *
+     * POST /session
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * Content:
+     *  password={password}
+     *  email={email}
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     */
     public function userLogin(ServerRequestInterface $request): ResponseInterface
     {
         // TODO: Rate limiting
@@ -142,6 +195,18 @@ class UserController
         );
     }
 
+    /**
+     * Delete the session.
+     *
+     *  DELETE /session
+     *  Accept: application/json
+     *  Content-Type: application/json
+     *  X-RestockApiToken: anything
+     *  X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     */
     public function userLogout(ServerRequestInterface $request): ResponseInterface
     {
         $user = $this->user;
@@ -167,11 +232,44 @@ class UserController
         );
     }
 
+    /**
+     * Fetch user's details.
+     *
+     * GET /user/{user_id:number}
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws \Exception
+     */
     public function getUser(ServerRequestInterface $request): ResponseInterface
     {
         throw new \Exception("Not implemented.");
     }
 
+    /**
+     * Update user.
+     * Password is only required when setting a new password.
+     *
+     * PUT /user
+     * Accept: application/json
+     * Content-Type: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     * Content:
+     *  {
+     *      "new_username": "the blah",
+     *
+     *      "password": "Sharp_Gooser11",
+     *      "new_password": "Quack_Attack!"
+     *  }
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws \Exception
+     */
     public function updateUser(ServerRequestInterface $request): ResponseInterface
     {
         $user = $this->user;
@@ -225,6 +323,18 @@ class UserController
         );
     }
 
+    /**
+     * Delete a user, all their sessions, and all their owned groups.
+     *
+     * PUT /user
+     *  Accept: application/json
+     *  X-RestockApiToken: anything
+     *  X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     */
     public function deleteUser(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $user = $this->user;
