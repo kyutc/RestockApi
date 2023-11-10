@@ -174,7 +174,55 @@ class UserController
 
     public function updateUser(ServerRequestInterface $request): ResponseInterface
     {
-        throw new \Exception("Not implemented.");
+        $user = $this->user;
+        $data = json_decode($request->getBody()->getContents(), true);
+
+        if ($new_username = $data['new_username']) {
+            $user->setName($new_username);
+        }
+
+        if ($new_password = $data['new_password']) {
+            $password = $data['password']; // Original password is required to set new password
+
+            if (!is_string($password) || !password_verify($password, $user->getPassword())) {
+                // Bad original password
+                return new JsonResponse([
+                    'result' => 'error',
+                    'message' => 'Could not verify password.'
+                ],
+                    401
+                );
+            }
+            if (!is_string($new_password) || strlen($new_password) < 8) {
+                // Invalid new password
+                return new JsonResponse([
+                    'result' => 'error',
+                    'message' => 'New password must be 8 or more characters.'
+                ],
+                    400
+                );
+            }
+            $user->setPassword($new_password);
+        }
+
+        try {
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+        } catch (ORMException $e) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Failed when updating database'
+            ],
+                500
+            );
+        }
+
+        return new JsonResponse([
+            'result' => 'success',
+            'message' => 'Account updated'
+        ],
+            200
+        );
     }
 
     public function deleteUser(ServerRequestInterface $request, array $args): ResponseInterface
