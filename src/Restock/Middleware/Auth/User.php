@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace Restock\Middleware\Auth;
 
-use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Laminas\Diactoros\Response\RedirectResponse;
-use Restock\Db\UserAccount;
-use Restock\Entity\Session;
 
 class User implements MiddlewareInterface
 {

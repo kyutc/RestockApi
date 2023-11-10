@@ -17,16 +17,11 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 
-use \League\BooBoo\BooBoo;
 use \League\BooBoo\Formatter\JsonFormatter;
-use \Laminas\Diactoros\Response\JsonResponse;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-use Restock\Db\UserAccount;
 use Restock\Controller;
 
 // Error handler and logger.
@@ -94,7 +89,7 @@ $container->add(EntityManager::class, $entityManager);
 $user = null;
 if ($request->hasHeader('X-RestockUserApiToken')) {
     $token = $request->getHeader('X-RestockUserApiToken')[0];
-    /** @var Session $session */
+    /** @var \Restock\Entity\Session $session */
     if ($session = $entityManager->getRepository('Restock\Entity\Session')->findOneBy(['token' => $token])) {
         // Token is found
         #TODO: check session age
