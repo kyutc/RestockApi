@@ -43,6 +43,18 @@ class GroupMember
         $this->setRole($role);
     }
 
+    public function __toString(): string
+    {
+        $group_member_details = [$this->id => [
+                'group_id' => $this->group->getId(),
+                'user_id' => $this->user->getId(),
+                'role' => $this->role
+            ]
+        ];
+
+        return json_encode($group_member_details);
+    }
+
     public function getId(): ?int
     {
         return $this->id;

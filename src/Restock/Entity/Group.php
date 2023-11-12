@@ -39,6 +39,25 @@ class Group
         $this->history = new ArrayCollection();
     }
 
+    public function __toString(): string
+    {
+        $group_details = [
+            'id' => $this->getId(),
+            'name' => $this->getName(),
+            'group_members' => implode(
+                ',',
+                array_map(fn(GroupMember $gm) => strval($gm), $this->getGroupMembers()->toArray())
+            ),
+        ];
+        $items = $this->getItems()->toArray();
+        if (count($items)) {
+            $group_details['items'] = implode(',', array_map(fn(Item $i) => strval($i), $items));
+        }
+
+
+        return json_encode($group_details);
+    }
+
     public function getId(): int
     {
         return $this->id;

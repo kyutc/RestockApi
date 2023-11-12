@@ -326,7 +326,7 @@ class UserController
     /**
      * Delete a user, all their sessions, and all their owned groups.
      *
-     * PUT /user
+     * DELETE /user/{user_id:number}
      *  Accept: application/json
      *  X-RestockApiToken: anything
      *  X-RestockUserApiToken: {token}

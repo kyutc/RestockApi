@@ -166,6 +166,7 @@ class Item
     {
         // Convert the item to an associative array
         $itemData = [
+            'id' => $this->getId(),
             'group_id' => $this->getGroup()->getId(),
             'name' => $this->getName(),
             'description' => $this->getDescription(),
@@ -176,8 +177,6 @@ class Item
             'shopping_list_quantity' => $this->getShoppingListQuantity(),
             'auto_add_to_pantry' => $this->isDontAddToPantryOnPurchase(),
         ];
-
-        $itemData = [$this->id => $itemData];
 
         return json_encode($itemData);
     }

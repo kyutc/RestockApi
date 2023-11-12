@@ -22,6 +22,18 @@ class GroupController
         $this->user = $user;
     }
 
+    /**
+     * Fetch group's details.
+     *
+     * GET /group/{group_id:number}
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws \Exception
+     */
     public function getGroupDetails(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
@@ -54,14 +66,26 @@ class GroupController
 
         return new JsonResponse([
             'result' => 'success',
-            'data' => [
-                'name' => $group->getName(),
-            ]
+            'data' => "{$group}"
         ],
             200
         );
     }
 
+    /**
+     * Register a new group
+     *
+     * POST /group
+     *  X-RestockUserApiToken: {token}
+     *  X-RestockApiToken: anything
+     *  Content:
+     *   name={new group name}
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
     public function createGroup(ServerRequestInterface $request): ResponseInterface
     {
         $owner = $this->user;
@@ -75,16 +99,40 @@ class GroupController
         return new JsonResponse([
             'result' => 'success',
             'message' => 'Group has been created.',
-            'id' => $group->getId()
+            'data' => "{$group}"
         ],
             201
         );
     }
 
+    /**
+     * Update group
+     *
+     *  PUT /group/{group_id:number}
+     *  Accept: application/json
+     *  Content-Type: application/json
+     *  X-RestockApiToken: anything
+     *  X-RestockUserApiToken: {token}
+     *  Content:
+     *   {
+     *       "name": "my new group's name!",
+     *   }
+     *
+     * Response body:
+     *
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
     public function updateGroup(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
-        $name = $request->getQueryParams()['name'] ?? '';
+        $data = json_decode($request->getBody()->getContents(), true);
+        $name = $data['name'] ?? '';
 
         if (empty($group_id) || empty($name) || !is_string($name)) {
             return new JsonResponse([
@@ -129,7 +177,8 @@ class GroupController
 
             return new JsonResponse([
                 'result' => 'success',
-                'message' => 'Group has been updated.'
+                'message' => 'Group has been updated.',
+                'data' => "{$group}"
             ],
                 200
             );
@@ -143,6 +192,21 @@ class GroupController
         );
     }
 
+    /**
+     * Delete a user, all their sessions, and all their owned groups.
+     *
+     *  DELETE /group/{group_id:number}
+     *   Accept: application/json
+     *   X-RestockApiToken: anything
+     *   X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
     public function deleteGroup(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';

@@ -171,36 +171,16 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('PUT', '/group/{group_id:number}', [Restock\Controller\GroupController::class, 'updateGroup']);
     $route->map('DELETE', '/group/{group_id:number}', [Restock\Controller\GroupController::class, 'deleteGroup']);
 
-    $route->map(
-        'GET',
-        '/group/{group_id:number}/member',
-        [Restock\Controller\GroupController::class, 'getGroupMembers']
-    );
-    $route->map(
-        'GET',
-        '/group/{group_id:number}/member/{user_id:number}',
-        [Restock\Controller\GroupController::class, 'getGroupMemberDetails']
-    );
-    $route->map(
-        'POST',
-        '/group/{group_id:number}/member',
-        [Restock\Controller\GroupController::class, 'addGroupMember']
-    );
-    $route->map(
-        'PUT',
-        '/group/{group_id:number}/member/{user_id:number}',
-        [Restock\Controller\GroupController::class, 'updateGroupMember']
-    );
-    $route->map(
-        'DELETE',
-        '/group/{group_id:number}/member/{user_id:number}',
-        [Restock\Controller\GroupController::class, 'deleteGroupMember']
-    );
+    $route->map('GET','/group/{group_id:number}/member',[Restock\Controller\GroupController::class, 'getGroupMembers']);
+    $route->map('GET', '/group/{group_id:number}/member/{user_id:number}', [Restock\Controller\GroupController::class, 'getGroupMemberDetails']);
+    $route->map('POST', '/group/{group_id:number}/member', [Restock\Controller\GroupController::class, 'addGroupMember']);
+    $route->map('PUT', '/group/{group_id:number}/member/{user_id:number}', [Restock\Controller\GroupController::class, 'updateGroupMember']);
+    $route->map('DELETE', '/group/{group_id:number}/member/{user_id:number}', [Restock\Controller\GroupController::class, 'deleteGroupMember']);
 
-    $route->map('GET', '/item/{item_id:number}', [Restock\Controller\ItemController::class, 'getItemDetails']);
-    $route->map('POST', '/item', [Restock\Controller\ItemController::class, 'createItem']);
-    $route->map('PUT', '/item/{item_id:number}', [Restock\Controller\ItemController::class, 'updateItem']);
-    $route->map('DELETE', '/item/{item_id:number}', [Restock\Controller\ItemController::class, 'deleteItem']);
+    $route->map('GET', '/group/{group_id:number}/item/{item_id:number}', [Restock\Controller\ItemController::class, 'getItemDetails']);
+    $route->map('POST', '/group/{group_id:number}/item', [Restock\Controller\ItemController::class, 'createItem']);
+    $route->map('PUT', '/group/{group_id:number}/item/{item_id:number}', [Restock\Controller\ItemController::class, 'updateItem']);
+    $route->map('DELETE', '/group/{group_id:number}/item/{item_id:number}', [Restock\Controller\ItemController::class, 'deleteItem']);
 
 //    $route->map('GET', '/recipe', [Restock\Controller\RecipeController::class, 'getRecipes']);
     $route->map('POST', '/recipe', [Restock\Controller\RecipeController::class, 'createRecipe']);
