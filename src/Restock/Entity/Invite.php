@@ -2,6 +2,7 @@
 
 namespace Restock\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -20,10 +21,14 @@ class Invite
     #[ORM\Column(length: 100)]
     private string $code;
 
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private \DateTimeImmutable $created_at;
+
     public function __construct(Group $group)
     {
         $this->group = $group;
         $this->code = base64_encode(random_bytes(18));
+        $this->created_at = new \DateTimeImmutable('now');
     }
 
     public function getId(): ?int
@@ -39,5 +44,15 @@ class Invite
     public function getCode(): string
     {
         return $this->code;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->created_at;
+    }
+
+    public function isExpired(): bool
+    {
+        throw new \Exception('Not implemented');
     }
 }
