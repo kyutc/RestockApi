@@ -24,6 +24,12 @@ class Group
     ], orphanRemoval: true)]
     private Collection $group_members;
 
+    #[ORM\OneToMany(mappedBy: 'group', targetEntity: Invite::class, cascade: [
+        'persist',
+        'remove'
+    ], orphanRemoval: true)]
+    private Collection $invites;
+
     #[ORM\OneToMany(mappedBy: 'group', targetEntity: Item::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $items;
 
@@ -82,6 +88,18 @@ class Group
     {
         $this->group_members->add(new GroupMember($this, $user, $role));
         return $this;
+    }
+
+    public function getInvites(): Collection
+    {
+        return $this->invites;
+    }
+
+    public function createInvite(): Invite
+    {
+        $invite = new Invite($this);
+        $this->invites->add($invite);
+        return $invite;
     }
 
     public function getItems(): Collection
