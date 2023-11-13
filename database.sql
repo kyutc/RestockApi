@@ -20,43 +20,24 @@
 --
 CREATE DATABASE IF NOT EXISTS restock;
 
+CREATE TABLE restock.recipe
+(
+    id           INT AUTO_INCREMENT NOT NULL,
+    user_id      INT                NOT NULL,
+    name         VARCHAR(100)       NOT NULL,
+    ingredients  LONGTEXT           NOT NULL,
+    instructions LONGTEXT           NOT NULL,
+    INDEX IDX_E8021933A76ED395 (user_id),
+    PRIMARY KEY (id)
+) DEFAULT CHARACTER SET utf8
+  COLLATE `utf8_unicode_ci`
+  ENGINE = InnoDB;
 CREATE TABLE restock.user
 (
     id       INT AUTO_INCREMENT NOT NULL,
     name     VARCHAR(100)       NOT NULL,
     password VARCHAR(100)       NOT NULL,
     email    VARCHAR(255)       NOT NULL,
-    PRIMARY KEY (id)
-) DEFAULT CHARACTER SET utf8
-  COLLATE `utf8_unicode_ci`
-  ENGINE = InnoDB;
-CREATE TABLE restock.`group`
-(
-    id   INT AUTO_INCREMENT NOT NULL,
-    name VARCHAR(100)       NOT NULL,
-    PRIMARY KEY (id)
-) DEFAULT CHARACTER SET utf8
-  COLLATE `utf8_unicode_ci`
-  ENGINE = InnoDB;
-CREATE TABLE restock.group_member
-(
-    id       INT AUTO_INCREMENT NOT NULL,
-    group_id INT                NOT NULL,
-    user_id  INT                NOT NULL,
-    role     VARCHAR(255)       NOT NULL,
-    INDEX IDX_DDAFD348FE54D947 (group_id),
-    INDEX IDX_DDAFD348A76ED395 (user_id),
-    PRIMARY KEY (id)
-) DEFAULT CHARACTER SET utf8
-  COLLATE `utf8_unicode_ci`
-  ENGINE = InnoDB;
-CREATE TABLE restock.recipe
-(
-    id           INT AUTO_INCREMENT NOT NULL,
-    user_id      INT                NOT NULL,
-    name         VARCHAR(100)       NOT NULL,
-    instructions LONGTEXT           NOT NULL,
-    INDEX IDX_E8021933A76ED395 (user_id),
     PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
@@ -69,6 +50,14 @@ CREATE TABLE restock.session
     create_date    DATETIME           NOT NULL COMMENT '(DC2Type:datetime_immutable)',
     last_used_date DATETIME           NOT NULL COMMENT '(DC2Type:datetime_immutable)',
     INDEX IDX_D71B9B65A76ED395 (user_id),
+    PRIMARY KEY (id)
+) DEFAULT CHARACTER SET utf8
+  COLLATE `utf8_unicode_ci`
+  ENGINE = InnoDB;
+CREATE TABLE restock.`group`
+(
+    id   INT AUTO_INCREMENT NOT NULL,
+    name VARCHAR(100)       NOT NULL,
     PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
@@ -101,10 +90,28 @@ CREATE TABLE restock.item
 ) DEFAULT CHARACTER SET utf8
   COLLATE `utf8_unicode_ci`
   ENGINE = InnoDB;
-ALTER TABLE restock.group_member
-    ADD CONSTRAINT FK_DDAFD348FE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
-ALTER TABLE restock.group_member
-    ADD CONSTRAINT FK_DDAFD348A76ED395 FOREIGN KEY (user_id) REFERENCES restock.user (id);
+CREATE TABLE restock.invite
+(
+    id       INT AUTO_INCREMENT NOT NULL,
+    group_id INT                NOT NULL,
+    code     VARCHAR(100)       NOT NULL,
+    INDEX IDX_F568B8D3FE54D947 (group_id),
+    PRIMARY KEY (id)
+) DEFAULT CHARACTER SET utf8
+  COLLATE `utf8_unicode_ci`
+  ENGINE = InnoDB;
+CREATE TABLE restock.group_member
+(
+    id       INT AUTO_INCREMENT NOT NULL,
+    group_id INT                NOT NULL,
+    user_id  INT                NOT NULL,
+    role     VARCHAR(255)       NOT NULL,
+    INDEX IDX_DDAFD348FE54D947 (group_id),
+    INDEX IDX_DDAFD348A76ED395 (user_id),
+    PRIMARY KEY (id)
+) DEFAULT CHARACTER SET utf8
+  COLLATE `utf8_unicode_ci`
+  ENGINE = InnoDB;
 ALTER TABLE restock.recipe
     ADD CONSTRAINT FK_E8021933A76ED395 FOREIGN KEY (user_id) REFERENCES restock.user (id);
 ALTER TABLE restock.session
@@ -113,4 +120,9 @@ ALTER TABLE restock.action_log
     ADD CONSTRAINT FK_E3774C4BFE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
 ALTER TABLE restock.item
     ADD CONSTRAINT FK_B31E3FADFE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
-
+ALTER TABLE restock.invite
+    ADD CONSTRAINT FK_F568B8D3FE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
+ALTER TABLE restock.group_member
+    ADD CONSTRAINT FK_DDAFD348FE54D947 FOREIGN KEY (group_id) REFERENCES restock.`group` (id);
+ALTER TABLE restock.group_member
+    ADD CONSTRAINT FK_DDAFD348A76ED395 FOREIGN KEY (user_id) REFERENCES restock.user (id);

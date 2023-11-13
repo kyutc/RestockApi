@@ -22,12 +22,16 @@ class Recipe
     private string $name;
 
     #[ORM\Column(type: Types::TEXT)]
+    private string $ingredients;
+
+    #[ORM\Column(type: Types::TEXT)]
     private string $instructions;
 
-    public function __construct(User $user, string $name, string $instructions)
+    public function __construct(User $user, string $name, string $ingredients, string $instructions)
     {
         $this->user = $user;
         $this->name = $name;
+        $this->ingredients = $ingredients;
         $this->instructions = $instructions;
     }
 
@@ -56,6 +60,16 @@ class Recipe
     {
         $this->name = $name;
         return $this;
+    }
+
+    public function getIngredients(): string
+    {
+        return $this->ingredients;
+    }
+
+    public function setIngredients(string $ingredients): void
+    {
+        $this->ingredients = $ingredients;
     }
 
     public function getInstructions(): string

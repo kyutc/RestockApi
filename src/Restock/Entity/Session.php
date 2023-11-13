@@ -14,7 +14,7 @@ class Session
     #[ORM\Column]
     private ?int $id;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'session')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'sessions')]
     #[ORM\JoinColumn(name: 'user_id',referencedColumnName: 'id', nullable: false)]
     private User $user;
 
