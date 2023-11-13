@@ -92,9 +92,10 @@ CREATE TABLE restock.item
   ENGINE = InnoDB;
 CREATE TABLE restock.invite
 (
-    id       INT AUTO_INCREMENT NOT NULL,
-    group_id INT                NOT NULL,
-    code     VARCHAR(100)       NOT NULL,
+    id         INT AUTO_INCREMENT NOT NULL,
+    group_id   INT                NOT NULL,
+    code       VARCHAR(100)       NOT NULL,
+    created_at DATETIME           NOT NULL COMMENT '(DC2Type:datetime_immutable)',
     INDEX IDX_F568B8D3FE54D947 (group_id),
     PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8
