@@ -550,4 +550,219 @@ class GroupController
             200
         );
     }
+
+    public function createGroupInvite(ServerRequestInterface $request, array $args): ResponseInterface
+    {
+        $group_id = $args['group_id'] ?? '';
+        $user = $this->user;
+
+        if (empty($group_id)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Required parameter missing.'
+            ],
+                400
+            );
+        }
+
+        $role = $user->getMemberDetails()->findFirst(
+            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+        )?->getRole() ?? '';
+
+        if ($role == '') {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You are not a member of this group, or the group does not exist.'
+            ],
+                400
+            );
+        }
+
+        // TODO: Should other roles be allowed to manage invites?
+        if ($role != \Restock\Entity\GroupMember::OWNER) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to create invites for this group.'
+            ],
+                403
+            );
+        }
+
+        /** @var \Restock\Entity\Group $group */
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
+        $invite = new \Restock\Entity\Invite($group);
+
+        $this->entityManager->persist($invite);
+        $this->entityManager->flush($invite);
+
+        return new JsonResponse([
+            'result' => 'success',
+            'code' => $invite->getCode()
+        ], 201);
+    }
+
+    public function listGroupInvites(ServerRequestInterface $request, array $args): ResponseInterface
+    {
+        $group_id = $args['group_id'] ?? '';
+        $user = $this->user;
+
+        if (empty($group_id)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Required parameter missing.'
+            ],
+                400
+            );
+        }
+
+        $role = $user->getMemberDetails()->findFirst(
+            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+        )?->getRole() ?? '';
+
+        if ($role == '') {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You are not a member of this group, or the group does not exist.'
+            ],
+                400
+            );
+        }
+
+        if ($role != \Restock\Entity\GroupMember::OWNER) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to list invites for this group.'
+            ],
+                403
+            );
+        }
+
+        /** @var \Restock\Entity\Group $group */
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
+
+        return new JsonResponse([
+            'result' => 'success',
+            // TODO: Should __toString() be implemented in Invite instead?
+            'data' => array_map(
+                fn(\Restock\Entity\Invite $invite) => [
+                    'id' => $invite->getId(),
+                    'code' => $invite->getCode(),
+                    'created_at' => $invite->getCreatedAt(),
+                    //'expired' => $invite->isExpired(),
+                ],
+                $group->getInvites()->toArray()
+            )
+        ], 201);
+    }
+
+    public function deleteGroupInvite(ServerRequestInterface $request, array $args): ResponseInterface
+    {
+        $group_id = $args['group_id'] ?? '';
+        $invite_id = $args['invite_id'] ?? '';
+        $user = $this->user;
+
+        if (empty($group_id)) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Required parameter missing.'
+            ],
+                400
+            );
+        }
+
+        $role = $user->getMemberDetails()->findFirst(
+            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+        )?->getRole() ?? '';
+
+        if ($role == '') {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You are not a member of this group, or the group does not exist.'
+            ],
+                400
+            );
+        }
+
+        if ($role != \Restock\Entity\GroupMember::OWNER) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to delete invites for this group.'
+            ],
+                403
+            );
+        }
+
+        /** @var \Restock\Entity\Invite $invite */
+        $invite = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $invite_id]);
+
+        if ($invite === null) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Invite does not exist.'
+            ], 400);
+        }
+
+        $this->entityManager->remove($invite);
+        $this->entityManager->flush($invite);
+
+        return new JsonResponse([
+            'result' => 'success',
+            'message' => 'Invite deleted.'
+        ], 200);
+    }
+
+    public function getGroupInviteDetails(ServerRequestInterface $request, array $args): ResponseInterface
+    {
+        $code = $args['code'] ?? '';
+
+        /** @var \Restock\Entity\Invite $invite */
+        $invite = $this->entityManager->getRepository('\Restock\Entity\Invite')->findOneBy(['code' => $code]);
+
+        if ($invite === null) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Invite does not exist.'
+            ], 400);
+        }
+
+        $group = $invite->getGroup();
+
+        return new JsonResponse([
+            'result' => 'success',
+            'data' => "{$group}"
+        ],
+            200
+        );
+    }
+
+    public function acceptGroupInvite(ServerRequestInterface $request, array $args): ResponseInterface
+    {
+        $code = $args['code'] ?? '';
+
+        /** @var \Restock\Entity\Invite $invite */
+        $invite = $this->entityManager->getRepository('\Restock\Entity\Invite')->findOneBy(['code' => $code]);
+
+        if ($invite === null) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'Invite does not exist.'
+            ], 400);
+        }
+
+        /** @var \Restock\Entity\Group $group */
+        $group = $invite->getGroup();
+        $group_member = new \Restock\Entity\GroupMember($group, $this->user);
+
+        $this->entityManager->persist($group_member);
+        $this->entityManager->remove($invite);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => 'success',
+            'message' => 'Group invite accepted.',
+            'id' => $group->getId()
+        ],
+            201
+        );
+    }
 }
