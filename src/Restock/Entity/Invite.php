@@ -55,4 +55,13 @@ class Invite
     {
         throw new \Exception('Not implemented');
     }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'group_id' => $this->getGroup()->getId(),
+            'code' => $this->getCode()
+        ];
+    }
 }

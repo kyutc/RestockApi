@@ -76,6 +76,7 @@ class GroupController
      * Register a new group
      *
      * POST /group
+     *  Accept: application/json
      *  X-RestockUserApiToken: {token}
      *  X-RestockApiToken: anything
      *  Content:
@@ -193,12 +194,12 @@ class GroupController
     }
 
     /**
-     * Delete a user, all their sessions, and all their owned groups.
+     * Delete a group.
      *
      *  DELETE /group/{group_id:number}
-     *   Accept: application/json
-     *   X-RestockApiToken: anything
-     *   X-RestockUserApiToken: {token}
+     *  Accept: application/json
+     *  X-RestockApiToken: anything
+     *  X-RestockUserApiToken: {token}
      *
      * @param ServerRequestInterface $request
      * @param array $args
@@ -551,6 +552,21 @@ class GroupController
         );
     }
 
+    /**
+     * Create an invitation to a group
+     *
+     * POST /group/{group_id:number}/invite
+     * Accept: application/json
+     * X-RestockUserApiToken: {token}
+     * X-RestockApiToken: anything
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
     public function createGroupInvite(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
@@ -601,6 +617,19 @@ class GroupController
         ], 201);
     }
 
+    /**
+     * Fetch unclaimed invitations
+     *
+     * GET /group/{group_id:number}/invite
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     */
     public function listGroupInvites(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
@@ -644,17 +673,27 @@ class GroupController
             'result' => 'success',
             // TODO: Should __toString() be implemented in Invite instead?
             'data' => array_map(
-                fn(\Restock\Entity\Invite $invite) => [
-                    'id' => $invite->getId(),
-                    'code' => $invite->getCode(),
-                    'created_at' => $invite->getCreatedAt(),
-                    //'expired' => $invite->isExpired(),
-                ],
+                fn(\Restock\Entity\Invite $invite) => $invite->toArray(),
                 $group->getInvites()->toArray()
             )
         ], 201);
     }
 
+    /**
+     * Delete an unclaimed invitation.
+     *
+     * DELETE /group/{group_id:number}/invite/{invite_id:number}
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
     public function deleteGroupInvite(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
@@ -693,7 +732,7 @@ class GroupController
         }
 
         /** @var \Restock\Entity\Invite $invite */
-        $invite = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $invite_id]);
+        $invite = $this->entityManager->getRepository('\Restock\Entity\Invite')->findOneBy(['id' => $invite_id]);
 
         if ($invite === null) {
             return new JsonResponse([
@@ -711,6 +750,19 @@ class GroupController
         ], 200);
     }
 
+    /**
+     * Check if an invitation exists
+     *
+     * GET /invite/{code:string}
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     */
     public function getGroupInviteDetails(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $code = $args['code'] ?? '';
@@ -735,6 +787,20 @@ class GroupController
         );
     }
 
+
+    /**
+     * Accept an invitation
+     *
+     * POST /invite/{code:string}
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     */
     public function acceptGroupInvite(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $code = $args['code'] ?? '';
