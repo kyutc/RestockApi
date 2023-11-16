@@ -123,6 +123,54 @@ curl http://api.cpsc4900.local/api/v1/group/{group_id} \
 && echo
 ```
 
+#### Create Invite
+```
+curl http://api.cpsc4900.local/api/v1/group/{group_id}/invite \
+-X "POST" \
+-H "Accept: application/json" \
+-H "X-RestockApiToken: anything" \
+-H "X-RestockUserApiToken: {token}" \
+&& echo
+```
+
+#### List Invites
+```
+curl http://api.cpsc4900.local/api/v1/group/{group_id}/invite \
+-H "Accept: application/json" \
+-H "X-RestockApiToken: anything" \
+-H "X-RestockUserApiToken: {token}" \
+&& echo
+```
+
+#### Delete Invite
+```
+curl http://api.cpsc4900.local/api/v1/group/{group_id}/invite/{invite_id} \
+-X "DELETE" \
+-H "Accept: application/json" \
+-H "X-RestockApiToken: anything" \
+-H "X-RestockUserApiToken: {token}" \
+&& echo
+```
+
+#### Fetch Invite
+```
+curl http://api.cpsc4900.local/api/v1/invite/{code} \
+-H "Accept: application/json" \
+-H "X-RestockApiToken: anything" \
+-H "X-RestockUserApiToken: {token}" \
+&& echo
+```
+
+#### Accept Invite
+```
+curl http://api.cpsc4900.local/api/v1/invite/{code} \
+-X "POST" \
+-H "Accept: application/json" \
+-H "X-RestockApiToken: anything" \
+-H "X-RestockUserApiToken: {token}" \
+&& echo
+```
+
 ___
 # Item Controller
 #### Create Item
