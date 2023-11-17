@@ -22,46 +22,69 @@ class ActionLogger {
     }
 
     public function logUserAddedToGroup(): ActionLog {
-        return $this->createActionLog('User ' . $this->user->getName() . ' added to group ' . $this->group->getName());
+        return $this->createActionLog('User ' . $this->user->getName() . ' added to group');
     }
 
     public function logUserRemovedFromGroup(): ActionLog {
-        return $this->createActionLog('User ' . $this->user->getName() . ' removed from group ' . $this->group->getName());
+        return $this->createActionLog('User ' . $this->user->getName() . ' removed from group');
     }
 
     public function logUserLeftGroup(): ActionLog {
-        return $this->createActionLog('User ' . $this->user->getName() . ' left group ' . $this->group->getName());
+        return $this->createActionLog('User ' . $this->user->getName() . ' left group');
     }
 
     public function logUserRoleChanged(): ActionLog {
-        return $this->createActionLog('User ' . $this->user->getName() . ' role changed in group ' . $this->group->getName());
+        return $this->createActionLog('User ' . $this->user->getName() . ' role changed');
     }
 
     public function logUsernameChanged(): ActionLog {
-        return $this->createActionLog('User ' . $this->user->getName() . ' name changed');
+        return $this->createActionLog('User ' . $this->user->getName() . ' name changed', false);
     }
 
     public function logItemAddedToPantry(Item $item): ActionLog {
-        return $this->createActionLog('Item ' . $item->getName() . ' added to pantry in group ' . $this->group->getName());
+        return $this->createActionLog('Item ' . $item->getName() . ' added to pantry');
     }
 
     public function logItemRemovedFromPantry(Item $item): ActionLog {
-        return $this->createActionLog('Item ' . $item->getName() . ' removed from pantry in group ' . $this->group->getName());
+        return $this->createActionLog('Item ' . $item->getName() . ' removed from pantry');
     }
 
     public function logItemAddedToShoppingList(Item $item): ActionLog {
-        return $this->createActionLog('Item ' . $item->getName() . ' added to shopping list in group ' . $this->group->getName());
+        return $this->createActionLog('Item ' . $item->getName() . ' added to shopping list');
     }
 
     public function logItemRemovedFromShoppingList(Item $item): ActionLog {
-        return $this->createActionLog('Item ' . $item->getName() . ' removed from shopping list in group ' . $this->group->getName());
+        return $this->createActionLog('Item ' . $item->getName() . ' removed from shopping list');
     }
 
     public function logGroupNameChanged(): ActionLog {
-        return $this->createActionLog('Group ' . $this->group->getName() . ' name changed');
+        return $this->createActionLog('Group ' . $this->group->getName() . ' name changed', false);
     }
 
-    private function createActionLog(string $logMessage): ActionLog {
+    public function logGroupCreated(): ActionLog {
+        return $this->createActionLog('Group ' . $this->group->getName() . ' created', false);
+    }
+
+    public function logGroupUpdated(): ActionLog {
+        return $this->createActionLog('Group ' . $this->group->getName() . ' updated', false);
+    }
+
+    public function logItemCreated(Item $item): ActionLog {
+        return $this->createActionLog('Item ' . $item->getName() . ' created');
+    }
+
+    public function logItemUpdated(Item $item): ActionLog {
+        return $this->createActionLog('Item ' . $item->getName() . ' updated');
+    }
+
+    public function logItemDeleted(Item $item): ActionLog {
+        return $this->createActionLog('Item ' . $item->getName() . ' deleted');
+    }
+
+    private function createActionLog(string $logMessage, bool $includeGroupName = true): ActionLog {
+        if ($includeGroupName) {
+            $logMessage .= ' in group ' . $this->group->getName();
+        }
         $actionLog = new ActionLog($this->group, $logMessage);
         $this->entityManager->persist($actionLog);
         $this->entityManager->flush();
