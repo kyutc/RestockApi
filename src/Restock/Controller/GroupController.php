@@ -9,17 +9,19 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Restock\Entity\User;
+use Restock\ActionLogger;
 
 class GroupController
 {
     private EntityManager $entityManager;
     private User $user;
+    private ActionLogger $actionLogger;
 
-
-    public function __construct(EntityManager $entityManager, User $user)
+    public function __construct(EntityManager $entityManager, User $user, ActionLogger $actionLogger)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
+        $this->actionLogger = $actionLogger;
     }
 
     /**
@@ -96,6 +98,7 @@ class GroupController
         $group = new \Restock\Entity\Group($name, $owner);
         $this->entityManager->persist($group);
         $this->entityManager->flush();
+        $this->actionLogger->logGroupCreated($group);
 
         return new JsonResponse([
             'result' => 'success',
@@ -175,6 +178,7 @@ class GroupController
             $group->setName($name);
             $this->entityManager->persist($group);
             $this->entityManager->flush($group);
+            $this->actionLogger->logGroupUpdated($group);
 
             return new JsonResponse([
                 'result' => 'success',
@@ -820,6 +824,7 @@ class GroupController
         $group_member = new \Restock\Entity\GroupMember($group, $this->user);
 
         $this->entityManager->persist($group_member);
+        $this->actionLogger->logUserAddedToGroup();
         $this->entityManager->remove($invite);
         $this->entityManager->flush();
 
