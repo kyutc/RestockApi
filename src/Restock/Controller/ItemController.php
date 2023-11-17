@@ -13,16 +13,18 @@ use Restock\Entity\Group;
 use Restock\Entity\GroupMember;
 use Restock\Entity\Item;
 use Restock\Entity\User;
+use Restock\ActionLogger;
 
 class ItemController
 {
     private EntityManager $entityManager;
     private User $user;
 
-    public function __construct(EntityManager $entityManager, User $user)
+    public function __construct(EntityManager $entityManager, User $user, ActionLogger $actionLogger)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
+        $this->actionLogger = $actionLogger;
     }
 
     /**
@@ -81,6 +83,7 @@ class ItemController
 
         $entityManager->persist($item);
         $entityManager->flush();
+        $this->actionLogger->logItemCreated($item);
 
         // Return a JSON response with the created items and their properties.
         $response = [
@@ -158,6 +161,7 @@ class ItemController
 
         $entityManager->persist($item);
         $entityManager->flush();
+        $this->actionLogger->logItemUpdated($item);
 
         $response = [
             'result' => 'success',
@@ -205,6 +209,7 @@ class ItemController
 
         $entityManager->remove($item);
         $entityManager->flush();
+        $this->actionLogger->logItemDeleted($item);
 
         $response = [
             'result' => 'success',
