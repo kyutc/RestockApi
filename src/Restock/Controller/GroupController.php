@@ -371,10 +371,10 @@ class GroupController
         }
 
         // TODO: Should *this* be the path to change ownership, or should that be elsewhere?
-        if ($new_role == \Restock\Entity\GroupMember::OWNER) {
+        if ($new_role == \Restock\Entity\GroupMember::OWNER && $new_role != \Restock\Entity\GroupMember::OWNER) {
             return new JsonResponse([
                 'result' => 'error',
-                'message' => 'There can only be one owner of a group.'
+                'message' => 'You do not have permission to assign a different owner.'
             ],
                 400
             );
@@ -393,7 +393,7 @@ class GroupController
             );
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
+        if ($role != \Restock\Entity\GroupMember::OWNER && $role != \Restock\Entity\GroupMember::ADMIN) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'You do not have permission to modify members in this group.'
@@ -403,6 +403,16 @@ class GroupController
         }
 
         /** @var \Restock\Entity\GroupMember $group_member */
+        // Ensure the caller can only change the role of users with a lesser role
+        if ($new_role != '' && $group_member->getRole() >= $role) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to assign this role.'
+            ],
+                403
+            );
+        }
+
         if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
             ['group' => $group_id, 'user' => $user_id]
         )) {
@@ -422,7 +432,8 @@ class GroupController
 
             return new JsonResponse([
                 'result' => 'success',
-                'message' => 'Group member updated.'
+                'message' => 'Group member updated.',
+                'data' => "{$group_member}"
             ],
                 200
             );
@@ -465,7 +476,7 @@ class GroupController
             );
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
+        if ($role != \Restock\Entity\GroupMember::OWNER && $role != \Restock\Entity\GroupMember::ADMIN) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'You do not have permission to remove members from this group.'
@@ -474,8 +485,16 @@ class GroupController
             );
         }
 
-
         /** @var \Restock\Entity\GroupMember $group_member */
+
+        // Ensure the user can only delete users with a lesser role
+        if ($group_member->getRole() >= $role && $user->getId() != $user_id) {
+            return new JsonResponse([
+                'result' => 'error',
+                'message' => 'You do not have permission to remove this member.'
+            ], 403);
+        }
+
         if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
             ['group' => $group_id, 'user' => $user_id]
         )) {
