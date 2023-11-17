@@ -14,16 +14,19 @@ use Restock\Entity\Group;
 use Restock\Entity\GroupMember;
 use Restock\Entity\Session;
 use Restock\Entity\User;
+use Restock\ActionLogger;
 
 class UserController
 {
     private EntityManager $entityManager;
     private ?User $user;
+    private ActionLogger $actionLogger;
 
-    public function __construct(EntityManager $entityManager, ?User $user)
+    public function __construct(EntityManager $entityManager, ?User $user, Actionlogger $actionLogger)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
+        $this->actionlogger = $actionLogger;
     }
 
     /**
@@ -277,6 +280,7 @@ class UserController
 
         if ($new_username = $data['new_username']) {
             $user->setName($new_username);
+            $this->actionLogger->logUsernameChanged();
         }
 
         if ($new_password = $data['new_password']) {
