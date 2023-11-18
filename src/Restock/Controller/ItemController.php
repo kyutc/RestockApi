@@ -20,11 +20,10 @@ class ItemController
     private EntityManager $entityManager;
     private User $user;
 
-    public function __construct(EntityManager $entityManager, User $user, ActionLogger $actionLogger)
+    public function __construct(EntityManager $entityManager, User $user)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
-        $this->actionLogger = $actionLogger;
     }
 
     /**
@@ -52,6 +51,7 @@ class ItemController
      */
     public function createItem(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $entityManager = $this->entityManager;
         $user = $this->user;
         $data = $request->getParsedBody();
@@ -83,7 +83,7 @@ class ItemController
 
         $entityManager->persist($item);
         $entityManager->flush();
-        $this->actionLogger->logItemCreated($item);
+        $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' created');
 
         // Return a JSON response with the created items and their properties.
         $response = [
@@ -122,6 +122,7 @@ class ItemController
      */
     public function updateItem(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $entityManager = $this->entityManager;
         $user = $this->user;
 
@@ -161,7 +162,7 @@ class ItemController
 
         $entityManager->persist($item);
         $entityManager->flush();
-        $this->actionLogger->logItemUpdated($item);
+        $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' updated');
 
         $response = [
             'result' => 'success',
@@ -182,6 +183,7 @@ class ItemController
      */
     public function deleteItem(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $user = $this->user;
         $entityManager = $this->entityManager;
 
@@ -209,7 +211,7 @@ class ItemController
 
         $entityManager->remove($item);
         $entityManager->flush();
-        $this->actionLogger->logItemDeleted($item);
+        $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' deleted');
 
         $response = [
             'result' => 'success',
