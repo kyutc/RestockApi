@@ -20,13 +20,11 @@ class UserController
 {
     private EntityManager $entityManager;
     private ?User $user;
-    private ActionLogger $actionLogger;
 
-    public function __construct(EntityManager $entityManager, ?User $user, Actionlogger $actionLogger)
+    public function __construct(EntityManager $entityManager, ?User $user)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
-        $this->actionlogger = $actionLogger;
     }
 
     /**
@@ -275,12 +273,18 @@ class UserController
      */
     public function updateUser(ServerRequestInterface $request): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $user = $this->user;
         $data = json_decode($request->getBody()->getContents(), true);
 
         if ($new_username = $data['new_username']) {
+            $old_username = $user->getName();
             $user->setName($new_username);
-            $this->actionLogger->logUsernameChanged();
+            $groupMemberships = $user->getMemberDetails();
+            foreach ($groupMemberships as $groupMembership) {
+                $group = $groupMembership->getGroup();
+                $actionLogger->createActionLog($group, 'Username changed from ' . $old_username . ' to ' . $new_username);
+            }
         }
 
         if ($new_password = $data['new_password']) {
