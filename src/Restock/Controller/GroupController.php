@@ -15,13 +15,11 @@ class GroupController
 {
     private EntityManager $entityManager;
     private User $user;
-    private ActionLogger $actionLogger;
 
-    public function __construct(EntityManager $entityManager, User $user, ActionLogger $actionLogger)
+    public function __construct(EntityManager $entityManager, User $user)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
-        $this->actionLogger = $actionLogger;
     }
 
     /**
@@ -91,6 +89,7 @@ class GroupController
      */
     public function createGroup(ServerRequestInterface $request): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $owner = $this->user;
         $name = $request->getParsedBody()['name'] ?? '';
 
@@ -98,7 +97,7 @@ class GroupController
         $group = new \Restock\Entity\Group($name, $owner);
         $this->entityManager->persist($group);
         $this->entityManager->flush();
-        $this->actionLogger->logGroupCreated($group);
+        $actionLogger->createActionLog($group, 'Group ' . $group->getName() . ' created');
 
         return new JsonResponse([
             'result' => 'success',
@@ -134,6 +133,7 @@ class GroupController
      */
     public function updateGroup(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $group_id = $args['group_id'] ?? '';
         $data = json_decode($request->getBody()->getContents(), true);
         $name = $data['name'] ?? '';
@@ -178,7 +178,7 @@ class GroupController
             $group->setName($name);
             $this->entityManager->persist($group);
             $this->entityManager->flush($group);
-            $this->actionLogger->logGroupUpdated($group);
+            $actionLogger->createActionLog($group, 'Group ' . $group->getName() . ' updated');
 
             return new JsonResponse([
                 'result' => 'success',
@@ -843,7 +843,6 @@ class GroupController
         $group_member = new \Restock\Entity\GroupMember($group, $this->user);
 
         $this->entityManager->persist($group_member);
-        $this->actionLogger->logUserAddedToGroup();
         $this->entityManager->remove($invite);
         $this->entityManager->flush();
 
