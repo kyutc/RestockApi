@@ -8,6 +8,9 @@ use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Restock\Entity\ActionLog;
+use Restock\Entity\GroupMember;
+use Restock\Entity\Item;
 use Restock\Entity\User;
 use Restock\ActionLogger;
 
@@ -29,6 +32,43 @@ class GroupController
      * Accept: application/json
      * X-RestockApiToken: anything
      * X-RestockUserApiToken: {token}
+     *
+     * Response:
+     * {
+     *  "id": "2",
+     *  "name": "my pantry",
+     *  "group_members": [
+     *      {
+     *          "id": "4",
+     *          "group_id": "2",
+     *          "user_id": "22",
+     *          "role": "member"
+     *      },
+     *      ...
+     *  ],
+     *  "items": [
+     *        {
+     *            "id": "15",
+     *            "group_id": "2",
+     *            "name": "ketchup",
+     *            "description": "sugary tomato paste",
+     *            "category": "deafult;#000000",
+     *            "pantry_quantity": "62",
+     *            "minimum_threshold": "40",
+     *            "auto_add_to_shopping_list": "true",
+     *            "shopping_list_quantity": "0",
+     *            "dont_add_to_pantry_on_purchase": "false"
+     *        },
+     *        ...
+     *    ],
+     *  "action_logs": [
+     *      {
+     *          "id": "102",
+     *          "group_id": "2",
+     *          "log_message": "Group The Pantry Room created.",
+     *          "timestamp": {I've no clue}
+     *  ]
+     * }
      *
      * @param ServerRequestInterface $request
      * @return ResponseInterface
@@ -65,8 +105,10 @@ class GroupController
         $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
 
         return new JsonResponse([
-            'result' => 'success',
-            'data' => "{$group}"
+            ...$group->toArray(),
+            "group_members" => array_map(fn (GroupMember $groupMember):array => $groupMember->toArray(), $group->getGroupMembers()->toArray()),
+            "items" => array_map(fn (Item $item): array => $item->toArray(), $group->getItems()->toArray()),
+            "action_logs" => array_map(fn (ActionLog $actionLog):array => $actionLog->toArray(), $group->getHistory()->toArray())
         ],
             200
         );
@@ -82,6 +124,11 @@ class GroupController
      *  Content:
      *   name={new group name}
      *
+     * Response:
+     * {
+     *  "id": "2",
+     *  "name" "The Pantry Room"
+     * }
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      * @throws \Doctrine\ORM\Exception\ORMException
@@ -99,11 +146,8 @@ class GroupController
         $this->entityManager->flush();
         $actionLogger->createActionLog($group, 'Group ' . $group->getName() . ' created');
 
-        return new JsonResponse([
-            'result' => 'success',
-            'message' => 'Group has been created.',
-            'data' => "{$group}"
-        ],
+        return new JsonResponse(
+            $group->toArray(),
             201
         );
     }
@@ -122,7 +166,10 @@ class GroupController
      *   }
      *
      * Response body:
-     *
+     * {
+     *   "id": "2",
+     *   "name" "Buttery"
+     * }
      *
      * @param ServerRequestInterface $request
      * @param array $args
@@ -180,11 +227,8 @@ class GroupController
             $this->entityManager->flush($group);
             $actionLogger->createActionLog($group, 'Group ' . $group->getName() . ' updated');
 
-            return new JsonResponse([
-                'result' => 'success',
-                'message' => 'Group has been updated.',
-                'data' => "{$group}"
-            ],
+            return new JsonResponse(
+                $group->toArray(),
                 200
             );
         }
@@ -335,11 +379,8 @@ class GroupController
             );
         }
 
-        return new JsonResponse([
-            'result' => 'success',
-            'message' => 'Group member added.',
-            'id' => $group_member->getId()
-        ],
+        return new JsonResponse(
+            $group_member->toArray(),
             201
         );
     }
@@ -430,11 +471,8 @@ class GroupController
             $this->entityManager->persist($group_member);
             $this->entityManager->flush($group_member);
 
-            return new JsonResponse([
-                'result' => 'success',
-                'message' => 'Group member updated.',
-                'data' => "{$group_member}"
-            ],
+            return new JsonResponse(
+                $group_member->toArray(),
                 200
             );
         }
@@ -567,10 +605,8 @@ class GroupController
             ];
         }
 
-        return new JsonResponse([
-            'result' => 'success',
-            'data' => $result
-        ],
+        return new JsonResponse(
+            $group->getGroupMembers()->toArray(),
             200
         );
     }
@@ -582,6 +618,13 @@ class GroupController
      * Accept: application/json
      * X-RestockUserApiToken: {token}
      * X-RestockApiToken: anything
+     *
+     * Response:
+     * {
+     *  "id": "17",
+     *  "group_id",
+     *  "code": "VSWfT4V3pnSyRFY8F4gz2bdM"
+     * }
      *
      * @param ServerRequestInterface $request
      * @param array $args
@@ -634,10 +677,10 @@ class GroupController
         $this->entityManager->persist($invite);
         $this->entityManager->flush($invite);
 
-        return new JsonResponse([
-            'result' => 'success',
-            'code' => $invite->getCode()
-        ], 201);
+        return new JsonResponse(
+            $invite->toArray()
+            , 201
+        );
     }
 
     /**
@@ -648,6 +691,17 @@ class GroupController
      * X-RestockApiToken: anything
      * X-RestockUserApiToken: {token}
      *
+     * Response:
+     * {
+     *  [
+     *      {
+     *          "id": "17",
+     *          "group_id",
+     *          "code": "VSWfT4V3pnSyRFY8F4gz2bdM"
+     *      },
+     *      ...
+     *  ]
+     * }
      * @param ServerRequestInterface $request
      * @param array $args
      * @return ResponseInterface
@@ -692,14 +746,10 @@ class GroupController
         /** @var \Restock\Entity\Group $group */
         $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
 
-        return new JsonResponse([
-            'result' => 'success',
-            // TODO: Should __toString() be implemented in Invite instead?
-            'data' => array_map(
-                fn(\Restock\Entity\Invite $invite) => $invite->toArray(),
-                $group->getInvites()->toArray()
-            )
-        ], 201);
+        return new JsonResponse(
+            $group->getInvites()->toArray(),
+            201
+        );
     }
 
     /**
@@ -781,6 +831,12 @@ class GroupController
      * X-RestockApiToken: anything
      * X-RestockUserApiToken: {token}
      *
+     * Response:
+     *  {
+     *    "id": "2",
+     *    "name" "Buttery"
+     *  }
+     *
      * @param ServerRequestInterface $request
      * @param array $args
      * @return ResponseInterface
@@ -802,10 +858,8 @@ class GroupController
 
         $group = $invite->getGroup();
 
-        return new JsonResponse([
-            'result' => 'success',
-            'data' => "{$group}"
-        ],
+        return new JsonResponse(
+            $group->toArray(),
             200
         );
     }
@@ -818,6 +872,12 @@ class GroupController
      * Accept: application/json
      * X-RestockApiToken: anything
      * X-RestockUserApiToken: {token}
+     *
+     * Response:
+     *  {
+     *    "id": "2",
+     *    "name" "Buttery"
+     *  }
      *
      * @param ServerRequestInterface $request
      * @param array $args
@@ -846,11 +906,8 @@ class GroupController
         $this->entityManager->remove($invite);
         $this->entityManager->flush();
 
-        return new JsonResponse([
-            'result' => 'success',
-            'message' => 'Group invite accepted.',
-            'id' => $group->getId()
-        ],
+        return new JsonResponse(
+            $group->toArray(),
             201
         );
     }
