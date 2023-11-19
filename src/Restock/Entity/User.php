@@ -155,4 +155,11 @@ class User
     {
         return new Group($groupName, $this);
     }
+
+    public function toArray(): array {
+        return [
+            "id" => $this->getId(),
+            "name" => $this->name
+        ];
+    }
 }

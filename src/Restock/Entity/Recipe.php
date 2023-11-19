@@ -35,6 +35,15 @@ class Recipe
         $this->instructions = $instructions;
     }
 
+    public function toArray(): array {
+        return [
+            "id" => $this->getId(),
+            "name" => $this->getName(),
+            "ingredients" => $this->getIngredients(),
+            "instructions" => $this->getInstructions()
+        ];
+    }
+
     public function getId(): ?int
     {
         return $this->id;

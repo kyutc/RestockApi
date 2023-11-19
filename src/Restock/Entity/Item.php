@@ -64,6 +64,21 @@ class Item
         $this->dont_add_to_pantry_on_purchase = $dont_add_to_pantry_on_purchase;
     }
 
+    public function toArray(): array {
+        return [
+            "id" => $this->getId(),
+            "group_id" => $this->getGroup()->getId(),
+            "name" => $this->getName(),
+            "description" => $this->getDescription(),
+            "category" => $this->getCategory(),
+            "pantry_quantity" => $this->getPantryQuantity(),
+            "minimum_threshold" => $this->getMinimumThreshold(),
+            "auto_add_to_shopping_list" => $this->isAutoAddToShoppingList(),
+            "shopping_list_quantity" => $this->getShoppingListQuantity(),
+            "dont_add_to_pantry_on_purchase" => $this->isDontAddToPantryOnPurchase()
+        ];
+    }
+
     public function getId(): ?int
     {
         return $this->id;

@@ -88,4 +88,13 @@ class GroupMember
         $this->role = $role;
         return $this;
     }
+
+    public function toArray(): array {
+        return [
+            "id" => $this->getId(),
+            "group_id" => $this->getGroup()->getId(),
+            "user_id" => $this->getUser()->getId(),
+            "role" => $this->getRole()
+        ];
+    }
 }
