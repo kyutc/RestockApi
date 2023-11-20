@@ -14,6 +14,7 @@ use Restock\Entity\GroupMember;
 use Restock\Entity\Item;
 use Restock\Entity\User;
 use Restock\ActionLogger;
+use Restock\PResponse;
 
 class ItemController
 {
@@ -76,10 +77,7 @@ class ItemController
         ]);
 
         if (is_null($group_member)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of that group'
-            ], 200);
+            return PResponse::forbidden('That group does not exist or you are not a member of that group');
         }
 
         $item = new Item(
@@ -100,10 +98,7 @@ class ItemController
         $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' created');
 
         // Return a JSON response with the created items and their properties.
-        return new JsonResponse(
-            $item->toArray()
-            , 200
-        );
+        return PResponse::created($item->toArray());
     }
 
     /**
@@ -161,20 +156,12 @@ class ItemController
         ]);
 
         if (is_null($group_member)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of that group'
-            ], 200);
+            return PResponse::forbidden('That group does not exist or you are not a member of that group');
         }
 
         $item = $entityManager->getRepository(Item::class)->find($args['item_id']);
         if (!$item) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'That item doesn\'t exist'
-            ],
-            200
-            );
+            return PResponse::forbidden('That item doesn\'t exist or doesn\'t belong to your group');
         }
 
         // Update item properties here...
@@ -191,10 +178,7 @@ class ItemController
         $entityManager->flush();
         $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' updated');
 
-        return new JsonResponse(
-            $item->toArray(),
-            200
-        );
+        return PResponse::ok($item->toArray());
     }
 
     /**
@@ -224,32 +208,19 @@ class ItemController
         ]);
 
         if (is_null($group_member)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of that group'
-            ], 200);
+            return PResponse::forbidden('That group does not exist or you are not a member of that group');
         }
 
         $item = $entityManager->getRepository(Item::class)->find($args['item_id']);
         if (!$item) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'That item doesn\'t exist'
-            ],
-                200
-            );
+            return PResponse::forbidden('That group does not exist or you are not a member of that group');
         }
 
         $entityManager->remove($item);
         $entityManager->flush();
         $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' deleted');
 
-        $response = [
-            'result' => 'success',
-            'message' => 'Item deleted'
-        ];
-
-        return new JsonResponse($response, 200);
+        return PResponse::ok();
     }
 
 }

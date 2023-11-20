@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Restock\Controller;
 
 use Doctrine\ORM\EntityManager;
-use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Restock\Entity\ActionLog;
 use Restock\Entity\Group;
 use Restock\Entity\GroupMember;
+use Restock\Entity\Invite;
 use Restock\Entity\Item;
 use Restock\Entity\User;
 use Restock\ActionLogger;
+use Restock\PResponse;
 
 class GroupController
 {
@@ -45,17 +46,15 @@ class GroupController
      *
      *
      * @param ServerRequestInterface $request
-     * @return JsonResponse
+     * @return ResponseInterface
      * @throws \Doctrine\ORM\Exception\NotSupported
      */
-    public function getUserGroups(ServerRequestInterface $request) {
-        $groups = array_map(fn (GroupMember $gm):Group => $gm->getGroup(),
+    public function getUserGroups(ServerRequestInterface $request)
+    {
+        $groups = array_map(fn(GroupMember $gm): Group => $gm->getGroup(),
             $this->entityManager->getRepository(GroupMember::class)->findBy(['user' => $this->user->getId()])
         );
-        return new JsonResponse(
-            array_map(fn (Group $g) => $g->toArray(), $groups),
-            200
-        );
+        return PResponse::ok(array_map(fn(Group $g) => $g->toArray(), $groups));
     }
 
     /**
@@ -112,39 +111,29 @@ class GroupController
         $group_id = $args['group_id'] ?? '';
 
         if (empty($group_id)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $user = $this->user;
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to view this group, or the group does not exist.'
-            ],
-                403
-            );
+            PResponse::forbidden('You do not have permission to view this group, or the group does not exist.');
         }
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
 
-        return new JsonResponse([
+        return PResponse::ok([
             ...$group->toArray(),
-            "group_members" => array_map(fn (GroupMember $groupMember):array => $groupMember->toArray(), $group->getGroupMembers()->toArray()),
-            "items" => array_map(fn (Item $item): array => $item->toArray(), $group->getItems()->toArray()),
-            "action_logs" => array_map(fn (ActionLog $actionLog):array => $actionLog->toArray(), $group->getHistory()->toArray())
-        ],
-            200
-        );
+            "group_members" => array_map(fn(GroupMember $groupMember): array => $groupMember->toArray(),
+                $group->getGroupMembers()->toArray()),
+            "items" => array_map(fn(Item $item): array => $item->toArray(), $group->getItems()->toArray()),
+            "action_logs" => array_map(fn(ActionLog $actionLog): array => $actionLog->toArray(),
+                $group->getHistory()->toArray())
+        ]);
     }
 
     /**
@@ -174,15 +163,12 @@ class GroupController
         $name = $request->getParsedBody()['name'] ?? '';
 
         // TODO: Duplicate group name error
-        $group = new \Restock\Entity\Group($name, $owner);
+        $group = new Group($name, $owner);
         $this->entityManager->persist($group);
         $this->entityManager->flush();
         $actionLogger->createActionLog($group, 'Group ' . $group->getName() . ' created');
 
-        return new JsonResponse(
-            $group->toArray(),
-            201
-        );
+        return PResponse::created($group->toArray());
     }
 
     /**
@@ -219,39 +205,24 @@ class GroupController
         $name = $data['name'] ?? '';
 
         if (empty($group_id) || empty($name) || !is_string($name)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $user = $this->user;
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::badRequest('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to update this group.'
-            ],
-                403
-            );
+        if ($role != GroupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to update this group.');
         }
 
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         if ($group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(
             ['id' => $group_id]
         )) {
@@ -260,18 +231,10 @@ class GroupController
             $this->entityManager->flush($group);
             $actionLogger->createActionLog($group, 'Group ' . $group->getName() . ' updated');
 
-            return new JsonResponse(
-                $group->toArray(),
-                200
-            );
+            return PResponse::ok($group->toArray());
         }
 
-        return new JsonResponse([
-            'result' => 'error',
-            'message' => 'Error updating group.'
-        ],
-            500
-        );
+        return PResponse::serverErr('Error updating group.');
     }
 
     /**
@@ -296,48 +259,28 @@ class GroupController
         $user = $this->user;
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to delete this group.'
-            ],
-                403
-            );
+        if ($role != GroupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to delete this group.');
         }
 
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         if ($group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(
             ['id' => $group_id]
         )) {
             $this->entityManager->remove($group);
             $this->entityManager->flush($group);
 
-            return new JsonResponse([
-                'result' => 'success',
-                'message' => 'Group has been deleted.'
-            ],
-                200
-            );
+            return PResponse::ok();
         }
 
-        return new JsonResponse([
-            'result' => 'error',
-            'message' => 'Error deleting group.'
-        ],
-            500
-        );
+        return PResponse::serverErr('Error deleting group.');
     }
 
     public function getGroupMemberDetails(ServerRequestInterface $request): ResponseInterface
@@ -353,50 +296,30 @@ class GroupController
         $user = $this->user;
 
         if (empty($group_id) || empty($user_id) || !is_string($user_id) || empty($new_role) || !is_string($new_role)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
-        if ($new_role == \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'There can only be one owner of a group.'
-            ],
-                400
-            );
+        if ($new_role == GroupMember::OWNER) {
+            return PResponse::badRequest('There can only be one owner of a group.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to add members to this group.'
-            ],
-                403
-            );
+        if ($role != GroupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to add members to this group.');
         }
 
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
-        /** @var \Restock\Entity\User $adding_user */
+        /** @var User $adding_user */
         $adding_user = $this->entityManager->getRepository('\Restock\Entity\User')->findOneBy(['id' => $user_id]);
-        $group_member = new \Restock\Entity\GroupMember($group, $adding_user);
+        $group_member = new GroupMember($group, $adding_user);
 
         // TODO: Duplicate group member entries should not be possible. A joint unique constraint can be added to the database for this.
         try {
@@ -404,18 +327,10 @@ class GroupController
             $this->entityManager->flush($group_member);
         } catch (\InvalidArgumentException) {
             // TODO: Generic exception should ideally be replaced with a specific one to catch for this situation
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Invalid role for user.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Invalid role for user.');
         }
 
-        return new JsonResponse(
-            $group_member->toArray(),
-            201
-        );
+        return PResponse::created($group_member->toArray());
     }
 
     public function updateGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
@@ -431,64 +346,34 @@ class GroupController
         $user = $this->user;
 
         if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         // This is a "fix" to prevent an owner from demoting themselves and thus breaking the group.
         if ($user->getId() == $user_id) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You cannot change your own group role.'
-            ],
-                400
-            );
+            return PResponse::badRequest('You cannot change your own group role.');
         }
 
-        if ($new_role == \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to assign a different owner.'
-            ],
-                400
-            );
+        if ($new_role == GroupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to assign a different owner.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER && $role != \Restock\Entity\GroupMember::ADMIN) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to modify members in this group.'
-            ],
-                403
-            );
+        if ($role != GroupMember::OWNER && $role != GroupMember::ADMIN) {
+            return PResponse::forbidden('You do not have permission to modify this group.');
         }
 
-        /** @var \Restock\Entity\GroupMember $group_member */
+        /** @var GroupMember $group_member */
         // Ensure the caller can only change the role of users with a lesser role
         if ($new_role != '' && $group_member->getRole() >= $role) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to assign this role.'
-            ],
-                403
-            );
+            return PResponse::forbidden('You do not have permission to assign this role.');
         }
 
         if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
@@ -497,30 +382,17 @@ class GroupController
             try {
                 $group_member->setRole($new_role);
             } catch (\InvalidArgumentException) {
-                return new JsonResponse([
-                    'result' => 'error',
-                    'message' => 'Invalid role for group member.'
-                ],
-                    500
-                );
+                return PResponse::badRequest('Invalid role for group member.');
             }
 
             $this->entityManager->persist($group_member);
             $this->entityManager->flush($group_member);
 
-            return new JsonResponse(
-                $group_member->toArray(),
-                200
-            );
+            return PResponse::ok($group_member->toArray());
         }
 
         // TODO: Does it matter to return an error saying "user is not a member of this group"? It doesn't do anything regardless.
-        return new JsonResponse([
-            'result' => 'error',
-            'message' => 'Error updating group member.'
-        ],
-            500
-        );
+        return PResponse::serverErr('Error updating group member.');
     }
 
     public function deleteGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
@@ -530,44 +402,26 @@ class GroupController
         $user = $this->user;
 
         if (empty($group_id) || empty($user_id)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER && $role != \Restock\Entity\GroupMember::ADMIN) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to remove members from this group.'
-            ],
-                403
-            );
+        if ($role != GroupMember::OWNER && $role != GroupMember::ADMIN) {
+            return PResponse::forbidden('You do not have permission to remove members from this group.');
         }
 
-        /** @var \Restock\Entity\GroupMember $group_member */
+        /** @var GroupMember $group_member */
 
         // Ensure the user can only delete users with a lesser role
         if ($group_member->getRole() >= $role && $user->getId() != $user_id) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to remove this member.'
-            ], 403);
+            return PResponse::forbidden('You do not have permission to remove this member.');
         }
 
         if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
@@ -576,20 +430,10 @@ class GroupController
             $this->entityManager->remove($group_member);
             $this->entityManager->flush($group_member);
 
-            return new JsonResponse([
-                'result' => 'success',
-                'message' => 'Member removed from group.'
-            ],
-                200
-            );
+            return PResponse::ok();
         }
 
-        return new JsonResponse([
-            'result' => 'error',
-            'message' => 'Error removing member from group.'
-        ],
-            500
-        );
+        return PResponse::serverErr('Error removing member from group.');
     }
 
     public function getGroupMembers(ServerRequestInterface $request, array $args): ResponseInterface
@@ -598,30 +442,20 @@ class GroupController
         $user = $this->user;
 
         if (empty($group_id)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
-        /** @var \Restock\Entity\GroupMember[] $members */
+        /** @var GroupMember[] $members */
         $members = $group->getGroupMembers();
 
         $result = array();
@@ -642,10 +476,7 @@ class GroupController
             ];
         }
 
-        return new JsonResponse(
-            $group->getGroupMembers()->toArray(),
-            200
-        );
+        return PResponse::ok($group->getGroupMembers()->toArray());
     }
 
     /**
@@ -676,48 +507,30 @@ class GroupController
         $user = $this->user;
 
         if (empty($group_id)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
         // TODO: Should other roles be allowed to manage invites?
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to create invites for this group.'
-            ],
-                403
-            );
+        if ($role != GroupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to create invites for this group.');
         }
 
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
-        $invite = new \Restock\Entity\Invite($group);
+        $invite = new Invite($group);
 
         $this->entityManager->persist($invite);
         $this->entityManager->flush($invite);
 
-        return new JsonResponse(
-            $invite->toArray()
-            , 201
-        );
+        return PResponse::created($invite->toArray());
     }
 
     /**
@@ -750,43 +563,25 @@ class GroupController
         $user = $this->user;
 
         if (empty($group_id)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to list invites for this group.'
-            ],
-                403
-            );
+        if ($role != roupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to list invites for this group.');
         }
 
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
 
-        return new JsonResponse(
-            $group->getInvites()->toArray(),
-            201
-        );
+        return PResponse::ok($group->getInvites()->toArray());
     }
 
     /**
@@ -811,53 +606,32 @@ class GroupController
         $user = $this->user;
 
         if (empty($group_id)) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Required parameter missing.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
-            fn($_, \Restock\Entity\GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
         if ($role == '') {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You are not a member of this group, or the group does not exist.'
-            ],
-                400
-            );
+            return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != \Restock\Entity\GroupMember::OWNER) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'You do not have permission to delete invites for this group.'
-            ],
-                403
-            );
+        if ($role != GroupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to delete invites for this group.');
         }
 
-        /** @var \Restock\Entity\Invite $invite */
+        /** @var Invite $invite */
         $invite = $this->entityManager->getRepository('\Restock\Entity\Invite')->findOneBy(['id' => $invite_id]);
 
         if ($invite === null) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Invite does not exist.'
-            ], 400);
+            return PResponse::notFound();
         }
 
         $this->entityManager->remove($invite);
         $this->entityManager->flush($invite);
 
-        return new JsonResponse([
-            'result' => 'success',
-            'message' => 'Invite deleted.'
-        ], 200);
+        return PResponse::ok();
     }
 
     /**
@@ -883,22 +657,16 @@ class GroupController
     {
         $code = $args['code'] ?? '';
 
-        /** @var \Restock\Entity\Invite $invite */
+        /** @var Invite $invite */
         $invite = $this->entityManager->getRepository('\Restock\Entity\Invite')->findOneBy(['code' => $code]);
 
         if ($invite === null) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Invite does not exist.'
-            ], 400);
+            return PResponse::notFound();
         }
 
         $group = $invite->getGroup();
 
-        return new JsonResponse(
-            $group->toArray(),
-            200
-        );
+        return PResponse::ok($group->toArray());
     }
 
 
@@ -925,27 +693,21 @@ class GroupController
     {
         $code = $args['code'] ?? '';
 
-        /** @var \Restock\Entity\Invite $invite */
+        /** @var Invite $invite */
         $invite = $this->entityManager->getRepository('\Restock\Entity\Invite')->findOneBy(['code' => $code]);
 
         if ($invite === null) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Invite does not exist.'
-            ], 400);
+            return PResponse::notFound();
         }
 
-        /** @var \Restock\Entity\Group $group */
+        /** @var Group $group */
         $group = $invite->getGroup();
-        $group_member = new \Restock\Entity\GroupMember($group, $this->user);
+        $group_member = new GroupMember($group, $this->user);
 
         $this->entityManager->persist($group_member);
         $this->entityManager->remove($invite);
         $this->entityManager->flush();
 
-        return new JsonResponse(
-            $group->toArray(),
-            201
-        );
+        return PResponse::created($group_member->toArray());
     }
 }
