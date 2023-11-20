@@ -36,7 +36,7 @@ class RecipeController {
             }
             $this->entityManager->persist($recipe);
             $this->entityManager->flush();
-            return new JsonResponse(['status' => 'success'], 201);
+            return new JsonResponse($recipe->toArray(), 201);
         } catch (Exception $e) {
             return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
@@ -49,7 +49,7 @@ class RecipeController {
             $recipe->setName($data['recipe_name']);
             $recipe->setInstructions($data['instructions']);
             $this->entityManager->flush();
-            return new JsonResponse(['status' => 'success'], 200);
+            return new JsonResponse($recipe->toArray(), 200);
         } catch (Exception $e) {
             return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], 500);
         }

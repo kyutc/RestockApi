@@ -161,6 +161,7 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     $route->map('PUT', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'updateUser']);
     $route->map('DELETE', '/user/{user_id:number}', [Restock\Controller\UserController::class, 'deleteUser']);
 
+    $route->map('GET', '/group', [Restock\Controller\GroupController::class, 'getUserGroups']);
     $route->map('GET', '/group/{group_id:number}', [Restock\Controller\GroupController::class, 'getGroupDetails']);
 //    $route->map('GET', '/group/{group_id:number}/members', [Restock\Controller\GroupController::class, 'getGroupMembers']);
     $route->map('GET', '/group/{group_id:number/items}', [Restock\Controller\GroupController::class, 'getGroupItems']);

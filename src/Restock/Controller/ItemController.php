@@ -20,11 +20,10 @@ class ItemController
     private EntityManager $entityManager;
     private User $user;
 
-    public function __construct(EntityManager $entityManager, User $user, ActionLogger $actionLogger)
+    public function __construct(EntityManager $entityManager, User $user)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
-        $this->actionLogger = $actionLogger;
     }
 
     /**
@@ -44,6 +43,20 @@ class ItemController
      *  shopping_list_quantity={quantity}
      *  dont_add_to_pantry_on_purchase={boolean}
      *
+     * Response:
+     * {
+     *  "id": "15",
+     *  "group_id": "2",
+     *  "name": "ketchup",
+     *  "description": "sugary tomato paste",
+     *  "category": "deafult;#000000",
+     *  "pantry_quantity": "62",
+     *  "minimum_threshold": "40",
+     *  "auto_add_to_shopping_list": "true",
+     *  "shopping_list_quantity": "0",
+     *  "dont_add_to_pantry_on_purchase": "false"
+     * }
+     *
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      * @throws \Doctrine\ORM\Exception\NotSupported
@@ -52,6 +65,7 @@ class ItemController
      */
     public function createItem(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $entityManager = $this->entityManager;
         $user = $this->user;
         $data = $request->getParsedBody();
@@ -83,15 +97,13 @@ class ItemController
 
         $entityManager->persist($item);
         $entityManager->flush();
-        $this->actionLogger->logItemCreated($item);
+        $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' created');
 
         // Return a JSON response with the created items and their properties.
-        $response = [
-            'result' => 'success',
-            'item' => "{$item}",
-        ];
-
-        return new JsonResponse($response, 200);
+        return new JsonResponse(
+            $item->toArray()
+            , 200
+        );
     }
 
     /**
@@ -114,6 +126,21 @@ class ItemController
      *      "dont_add_to_pantry_on_purchase": "{boolean}"
      *  }
      *
+     * Response:
+     *  {
+     *   "id": "15",
+     *   "group_id": "2",
+     *   "name": "ketchup",
+     *   "description": "sugary tomato paste",
+     *   "category": "deafult;#000000",
+     *   "pantry_quantity": "62",
+     *   "minimum_threshold": "40",
+     *   "auto_add_to_shopping_list": "true",
+     *   "shopping_list_quantity": "0",
+     *   "dont_add_to_pantry_on_purchase": "false"
+     *  }
+     *
+     *
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      * @throws \Doctrine\ORM\Exception\NotSupported
@@ -122,6 +149,7 @@ class ItemController
      */
     public function updateItem(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $entityManager = $this->entityManager;
         $user = $this->user;
 
@@ -161,18 +189,22 @@ class ItemController
 
         $entityManager->persist($item);
         $entityManager->flush();
-        $this->actionLogger->logItemUpdated($item);
+        $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' updated');
 
-        $response = [
-            'result' => 'success',
-            'items' => "{$item}",
-        ];
-
-        return new JsonResponse($response, 200);
+        return new JsonResponse(
+            $item->toArray(),
+            200
+        );
     }
 
     /**
      * Delete an existing item
+     *
+     * DELETE /group/{group_id}/item/{item_id} \
+     * Accept: application/json
+     * Content-Type: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
      *
      * @param ServerRequestInterface $request
      * @return ResponseInterface
@@ -182,6 +214,7 @@ class ItemController
      */
     public function deleteItem(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $user = $this->user;
         $entityManager = $this->entityManager;
 
@@ -209,7 +242,7 @@ class ItemController
 
         $entityManager->remove($item);
         $entityManager->flush();
-        $this->actionLogger->logItemDeleted($item);
+        $actionLogger->createActionLog($group_member->getGroup(), 'Item ' . $item->getName() . ' deleted');
 
         $response = [
             'result' => 'success',

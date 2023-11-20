@@ -69,4 +69,13 @@ class ActionLog
         $this->timestamp = $timestamp;
         return $this;
     }
+
+    public function toArray(): array {
+        return [
+            "id" => $this->getId(),
+            "group_id" => $this->getGroup()->getId(),
+            "log_message" => $this->getLogMessage(),
+            "timestamp" => $this->getTimestamp()->format('U')
+        ];
+    }
 }

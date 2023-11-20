@@ -20,13 +20,11 @@ class UserController
 {
     private EntityManager $entityManager;
     private ?User $user;
-    private ActionLogger $actionLogger;
 
-    public function __construct(EntityManager $entityManager, ?User $user, Actionlogger $actionLogger)
+    public function __construct(EntityManager $entityManager, ?User $user)
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
-        $this->actionlogger = $actionLogger;
     }
 
     /**
@@ -78,6 +76,12 @@ class UserController
      *  username={new username}
      *  password={new password}
      *
+     * Response:
+     * {
+     *  "id": {id},
+     *  "name": {name}
+     * }
+     *
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      * @throws ORMException
@@ -126,7 +130,7 @@ class UserController
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        return new \Laminas\Diactoros\Response\JsonResponse(['result' => 'success'], 200);
+        return new \Laminas\Diactoros\Response\JsonResponse($user->toArray(), 200);
     }
 
 
@@ -140,6 +144,12 @@ class UserController
      *  password={password}
      *  email={email}
      *
+     * Response:
+     * {
+     *  "id": "22",
+     *  "name": "Blahbuffet",
+     *  "session": "7rQjbcbpleehDA5UgA1GWKq5q4J5wdX/8ZA5hJc1PGk="
+     * }
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      * @throws ORMException
@@ -156,7 +166,6 @@ class UserController
 
         if (!is_string($password) || !is_string($email)) {
             return new JsonResponse([
-                'result' => 'error',
                 'message' => 'Missing required field(s)'
             ],
                 401
@@ -170,7 +179,6 @@ class UserController
             // Validate stored password hash
             if (!password_verify($password, $user->getPassword())) {
                 return new JsonResponse([
-                    'result' => 'error',
                     'message' => 'Invalid email or password.'
                 ],
                     401
@@ -183,15 +191,14 @@ class UserController
             $this->entityManager->flush();
 
             return new JsonResponse([
-                'result' => 'success',
-                'token' => $session->getToken()
+                ...$user->toArray(),
+                'session' => $session->getToken()
             ],
                 201
             );
         }
 
         return new JsonResponse([
-            'result' => 'error',
             'message' => 'Invalid email or password.'
         ],
             401
@@ -256,31 +263,42 @@ class UserController
      * Update user.
      * Password is only required when setting a new password.
      *
-     * PUT /user
+     * PUT /user/{user_id}
      * Accept: application/json
      * Content-Type: application/json
      * X-RestockApiToken: anything
      * X-RestockUserApiToken: {token}
      * Content:
      *  {
-     *      "new_username": "the blah",
+     *      "new_name": "the blah",
      *
      *      "password": "Sharp_Gooser11",
      *      "new_password": "Quack_Attack!"
      *  }
      *
+     * Response:
+     * {
+     *  "id": "24",
+     *  "name": "Bandapan"
+     * }
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      * @throws \Exception
      */
     public function updateUser(ServerRequestInterface $request): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $user = $this->user;
         $data = json_decode($request->getBody()->getContents(), true);
 
         if ($new_username = $data['new_username']) {
+            $old_username = $user->getName();
             $user->setName($new_username);
-            $this->actionLogger->logUsernameChanged();
+            $groupMemberships = $user->getMemberDetails();
+            foreach ($groupMemberships as $groupMembership) {
+                $group = $groupMembership->getGroup();
+                $actionLogger->createActionLog($group, 'Username changed from ' . $old_username . ' to ' . $new_username);
+            }
         }
 
         if ($new_password = $data['new_password']) {
@@ -319,10 +337,8 @@ class UserController
             );
         }
 
-        return new JsonResponse([
-            'result' => 'success',
-            'message' => 'Account updated'
-        ],
+        return new JsonResponse(
+            $user->toArray(),
             200
         );
     }
