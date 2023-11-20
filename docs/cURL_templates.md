@@ -123,6 +123,27 @@ curl http://api.cpsc4900.local/api/v1/group/{group_id} \
 && echo
 ```
 
+#### Update Group Member
+```
+curl http://api.cpsc4900.local/api/v1/group/{group_id}/member/{user_id} \
+-X "PUT" \
+-H "Accept: application/json" \
+-H "X-RestockApiToken: anything" \
+-H "X-RestockUserApiToken: {token}" \
+-d '{"role":"{new_role}"}' \
+&& echo
+```
+
+#### Update Group Member
+```
+curl http://api.cpsc4900.local/api/v1/group/{group_id}/member/{user_id} \
+-X "DELETE" \
+-H "Accept: application/json" \
+-H "X-RestockApiToken: anything" \
+-H "X-RestockUserApiToken: {token}" \
+&& echo
+```
+
 #### Create Invite
 ```
 curl http://api.cpsc4900.local/api/v1/group/{group_id}/invite \
