@@ -7,7 +7,6 @@ namespace Restock\Controller;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
-use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Restock\Entity\Group;
@@ -15,6 +14,7 @@ use Restock\Entity\GroupMember;
 use Restock\Entity\Session;
 use Restock\Entity\User;
 use Restock\ActionLogger;
+use Restock\PResponse;
 
 class UserController
 {
@@ -40,7 +40,7 @@ class UserController
      */
     public function authTest(ServerRequestInterface $request): ResponseInterface
     {
-        return new JsonResponse(['result' => 'success'], 200); // Provided session is valid
+        return PResponse::ok(); // Provided session is valid
     }
 
     /**
@@ -59,10 +59,10 @@ class UserController
     public function checkUsernameAvailable(ServerRequestInterface $request, array $args): ResponseInterface
     {
         if (!$this->entityManager->getRepository('Restock\Entity\User')->findOneBy(['username' => $args['username']])) {
-            return new JsonResponse([], 404); // Username is available
+            return PResponse::notFound(); // Username is available
         }
 
-        return new JsonResponse([], 200); // Username is not available
+        return PResponse::ok(); // Username is not available
     }
 
     /**
@@ -100,37 +100,22 @@ class UserController
         // Consider: mb_strlen and is varchar/other data type multibyte aware in db?
         // TODO: Limit charset of username to A-Z, a-z, 0-9, -, _
         if (!is_string($username) || strlen($username) < 3 || strlen($username) > 30) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Username must be between 3 and 30 characters.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Username must be between 3 and 30 characters.');
         }
 
         if ($this->entityManager->getRepository('Restock\Entity\User')->findBy(['email' => $email])) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Email is already in use.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Email is already in use.');
         }
 
         if (!is_string($password) || strlen($password) < 8) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Password must be 8 or more characters.'
-            ],
-                400
-            );
+            return PResponse::badRequest('Password must be 8 or more characters.');
         }
 
         $user = new User($username, $password, $email);
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        return new \Laminas\Diactoros\Response\JsonResponse($user->toArray(), 200);
+        return PResponse::created($user->toArray());
     }
 
 
@@ -165,11 +150,7 @@ class UserController
         $email = $request->getParsedBody()['email'];
 
         if (!is_string($password) || !is_string($email)) {
-            return new JsonResponse([
-                'message' => 'Missing required field(s)'
-            ],
-                401
-            );
+            return PResponse::badRequest('Missing required field(s)');
         }
 
         /** @var User $user */
@@ -178,11 +159,7 @@ class UserController
         )) {
             // Validate stored password hash
             if (!password_verify($password, $user->getPassword())) {
-                return new JsonResponse([
-                    'message' => 'Invalid email or password.'
-                ],
-                    401
-                );
+                return PResponse::badRequest('Invalid email or password.');
             }
 
             // Email and hashed password matches user entry
@@ -190,19 +167,13 @@ class UserController
             $this->entityManager->persist($session);
             $this->entityManager->flush();
 
-            return new JsonResponse([
+            return PResponse::created([
                 ...$user->toArray(),
                 'session' => $session->getToken()
-            ],
-                201
-            );
+            ]);
         }
 
-        return new JsonResponse([
-            'message' => 'Invalid email or password.'
-        ],
-            401
-        );
+        return PResponse::badRequest('Invalid email or password.');
     }
 
     /**
@@ -226,20 +197,10 @@ class UserController
             $this->entityManager->persist($user);
             $this->entityManager->flush();
         } catch (OptimisticLockException|ORMException $e) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Failed when updating database'
-            ],
-                500
-            );
+            return PResponse::serverErr('Failed when updating database');
         }
 
-        return new JsonResponse([
-            'result' => 'success',
-            'message' => 'You have been logged out.'
-        ],
-            200
-        );
+        return PResponse::ok();
     }
 
     /**
@@ -306,21 +267,11 @@ class UserController
 
             if (!is_string($password) || !password_verify($password, $user->getPassword())) {
                 // Bad original password
-                return new JsonResponse([
-                    'result' => 'error',
-                    'message' => 'Could not verify password.'
-                ],
-                    401
-                );
+                return PResponse::forbidden('Could not verify password.');
             }
             if (!is_string($new_password) || strlen($new_password) < 8) {
                 // Invalid new password
-                return new JsonResponse([
-                    'result' => 'error',
-                    'message' => 'New password must be 8 or more characters.'
-                ],
-                    400
-                );
+                return PResponse::badRequest('New password must be 8 or more characters.');
             }
             $user->setPassword($new_password);
         }
@@ -329,18 +280,10 @@ class UserController
             $this->entityManager->persist($user);
             $this->entityManager->flush();
         } catch (ORMException $e) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Failed when updating database'
-            ],
-                500
-            );
+            PResponse::serverErr('Failed when updating database');
         }
 
-        return new JsonResponse(
-            $user->toArray(),
-            200
-        );
+        return PResponse::ok($user->toArray());
     }
 
     /**
@@ -369,19 +312,9 @@ class UserController
             $this->entityManager->remove($user);
             $this->entityManager->flush();
         } catch (ORMException $e) {
-            return new JsonResponse([
-                'result' => 'error',
-                'message' => 'Failed to delete account.'
-            ],
-                500
-            );
+            return PResponse::serverErr('Failed to delete account.');
         }
 
-        return new JsonResponse([
-            'result' => 'success',
-            'message' => 'Account has been deleted.'
-        ],
-            200
-        );
+        return PResponse::ok();
     }
 }
