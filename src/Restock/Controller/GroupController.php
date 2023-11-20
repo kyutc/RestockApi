@@ -9,6 +9,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Restock\Entity\ActionLog;
+use Restock\Entity\Group;
 use Restock\Entity\GroupMember;
 use Restock\Entity\Item;
 use Restock\Entity\User;
@@ -23,6 +24,38 @@ class GroupController
     {
         $this->entityManager = $entityManager;
         $this->user = $user;
+    }
+
+    /**
+     * Fetch user's details.
+     *
+     * GET /group
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * Response:
+     * [
+     *  {
+     *   "id": "2",
+     *   "name": "my pantry",
+     *  },
+     *  ...
+     * ]
+     *
+     *
+     * @param ServerRequestInterface $request
+     * @return JsonResponse
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     */
+    public function getUserGroups(ServerRequestInterface $request) {
+        $groups = array_map(fn (GroupMember $gm):Group => $gm->getGroup(),
+            $this->entityManager->getRepository(GroupMember::class)->findBy(['user' => $this->user->getId()])
+        );
+        return new JsonResponse(
+            array_map(fn (Group $g) => $g->toArray(), $groups),
+            200
+        );
     }
 
     /**
@@ -389,7 +422,12 @@ class GroupController
     {
         $group_id = $args['group_id'] ?? '';
         $user_id = $args['user_id'] ?? '';
-        $new_role = $request->getQueryParams()['role'] ?? '';
+        $group_member = $this->entityManager->getRepository(GroupMember::class)->findOneBy([
+            'group_id' => $group_id,
+            'user_id' => $user_id
+        ]);
+        $data = json_decode($request->getBody()->getContents(), true);
+        $new_role = $data['role'] ?? '';
         $user = $this->user;
 
         if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
@@ -411,8 +449,7 @@ class GroupController
             );
         }
 
-        // TODO: Should *this* be the path to change ownership, or should that be elsewhere?
-        if ($new_role == \Restock\Entity\GroupMember::OWNER && $new_role != \Restock\Entity\GroupMember::OWNER) {
+        if ($new_role == \Restock\Entity\GroupMember::OWNER) {
             return new JsonResponse([
                 'result' => 'error',
                 'message' => 'You do not have permission to assign a different owner.'
