@@ -432,6 +432,7 @@ class GroupController
         $user_id = $args['user_id'] ?? '';
         $user = $this->user;
 
+
         /** @var GroupMember $group_member */
 
         $group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
@@ -450,9 +451,9 @@ class GroupController
             return PResponse::forbidden('Invalid user ID or user not found in the group.');
         }
 
-        if ($user->getId() == $user_id) {
-            return PResponse::forbidden('You cannot remove yourself from the group.');
-        }
+       // if ($user->getId() == $user_id) {
+       //     return PResponse::forbidden('You cannot remove yourself from the group.');
+       // }
 
         $role = $user->getMemberDetails()->findFirst(
             fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
@@ -462,13 +463,36 @@ class GroupController
             return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
+        $group_name = $group->getName();
+
         if ($role == GroupMember::MEMBER) {
-            return PResponse::forbidden('You do not have permission to remove members from this group.');
+            // Member removing themselves is allowed
+            if ($user->getId() == $user_id) {
+                $this->entityManager->remove($group_member);
+                $this->entityManager->flush($group_member);
+                return PResponse::ok(["You have been removed from $group_name."]);
+            } else {
+                return PResponse::forbidden('You do not have permission to remove members from this group.');
+            }
+        }
+
+        // Check if the group has multiple members before allowing removal
+        $groupMembersCount = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->count(
+            ['group' => $group_id]
+        );
+
+        if ($groupMembersCount <= 1) {
+            return PResponse::forbidden('A group cannot be made ownerless. Transfer ownership before removal.');
         }
 
         // Ensure the user can only delete users with a lesser role
         if ($group_member->getRole() >= $role && $user->getId() != $user_id) {
             return PResponse::forbidden('You do not have permission to remove this member.');
+        }
+
+        // Owner cannot remove themselves
+        if ($role == GroupMember::OWNER && $user->getId() == $user_id) {
+            return PResponse::forbidden('You cannot remove yourself from the group as the owner.');
         }
 
         if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
