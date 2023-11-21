@@ -351,8 +351,16 @@ class GroupController
             fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
         )?->getRole() ?? '';
 
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(
+            ['id' => $group_id]
+        );
+
         if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
             return PResponse::badRequest('Required parameter missing.');
+        }
+
+        if ($group === null) {
+            return PResponse::forbidden('Invalid group ID or group does not exist.');
         }
 
         // This is a "fix" to prevent an owner from demoting themselves and thus breaking the group.
@@ -424,8 +432,26 @@ class GroupController
         $user_id = $args['user_id'] ?? '';
         $user = $this->user;
 
+        /** @var GroupMember $group_member */
+
+        $group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+            ['group' => $group_id, 'user' => $user_id]
+        );
+
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(
+            ['id' => $group_id]
+        );
+
         if (empty($group_id) || empty($user_id)) {
             return PResponse::badRequest('Required parameter missing.');
+        }
+
+        if ($group_member === null) {
+            return PResponse::forbidden('Invalid user ID or user not found in the group.');
+        }
+
+        if ($user->getId() == $user_id) {
+            return PResponse::forbidden('You cannot remove yourself from the group.');
         }
 
         $role = $user->getMemberDetails()->findFirst(
@@ -436,11 +462,9 @@ class GroupController
             return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != GroupMember::OWNER && $role != GroupMember::ADMIN) {
+        if ($role == GroupMember::MEMBER) {
             return PResponse::forbidden('You do not have permission to remove members from this group.');
         }
-
-        /** @var GroupMember $group_member */
 
         // Ensure the user can only delete users with a lesser role
         if ($group_member->getRole() >= $role && $user->getId() != $user_id) {
@@ -450,10 +474,13 @@ class GroupController
         if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
             ['group' => $group_id, 'user' => $user_id]
         )) {
+            $group_name = $group->getName();
+            $user_name = $group_member->getUser()->getName();
+
             $this->entityManager->remove($group_member);
             $this->entityManager->flush($group_member);
 
-            return PResponse::ok();
+            return PResponse::ok(["$user_name has been removed from $group_name."]);
         }
 
         return PResponse::serverErr('Error removing member from group.');
@@ -597,7 +624,7 @@ class GroupController
             return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($role != roupMember::OWNER) {
+        if ($role != GroupMember::OWNER) {
             return PResponse::forbidden('You do not have permission to list invites for this group.');
         }
 
