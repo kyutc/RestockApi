@@ -337,13 +337,19 @@ class GroupController
     {
         $group_id = $args['group_id'] ?? '';
         $user_id = $args['user_id'] ?? '';
-        $group_member = $this->entityManager->getRepository(GroupMember::class)->findOneBy([
-            'group_id' => $group_id,
-            'user_id' => $user_id
-        ]);
         $data = json_decode($request->getBody()->getContents(), true);
         $new_role = $data['role'] ?? '';
         $user = $this->user;
+
+        /** @var GroupMember $group_member */
+
+        $group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+            ['group' => $group_id, 'user' => $user_id]
+        );
+
+        $role = $user->getMemberDetails()->findFirst(
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+        )?->getRole() ?? '';
 
         if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
             return PResponse::badRequest('Required parameter missing.');
@@ -355,23 +361,41 @@ class GroupController
         }
 
         if ($new_role == GroupMember::OWNER) {
-            return PResponse::forbidden('You do not have permission to assign a different owner.');
+            // Only the current owner can assign a new owner
+            if ($role !== GroupMember::OWNER) {
+                return PResponse::forbidden('You do not have permission to assign a different owner.');
+            }
+
+            // Demote the current owner to a member
+            $currentOwner = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+                ['group' => $group_id, 'role' => GroupMember::OWNER]
+            );
+
+            if ($currentOwner) {
+                try {
+                    $currentOwner->setRole(GroupMember::MEMBER);
+                    $this->entityManager->persist($currentOwner);
+                    $this->entityManager->flush($currentOwner);
+                } catch (\InvalidArgumentException) {
+                    return PResponse::badRequest('Invalid role for group member.');
+                }
+            }
         }
 
-        $role = $user->getMemberDetails()->findFirst(
-            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
-        )?->getRole() ?? '';
-
-        if ($role == '') {
+        if (!$group_member) {
+            // User is not a member of this group
             return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
+        /*        Testing: Changed member id to something that dne
+        curl http://api.cpsc4900.local/api/v1/group/1/member/9 -X "PUT" -H "Accept: application/json" -H "X-RestockApiToken: anything" -H "X-RestockUserApiToken: n++kR2ATDm7l/CV+jWuyBVP/030tgtff/Ak03iWQnT8=" -d '{"role":"member"}' && echo
+        {"result":"error","message":"You are not a member of this group, or the group does not exist."}
+        */
 
-        if ($role != GroupMember::OWNER && $role != GroupMember::ADMIN) {
+        if ($role == GroupMember::MEMBER) {
             return PResponse::forbidden('You do not have permission to modify this group.');
         }
 
-        /** @var GroupMember $group_member */
-        // Ensure the caller can only change the role of users with a lesser role
+        // Ensure the user can only change the role of users with a lesser role
         if ($new_role != '' && $group_member->getRole() >= $role) {
             return PResponse::forbidden('You do not have permission to assign this role.');
         }
@@ -391,7 +415,6 @@ class GroupController
             return PResponse::ok($group_member->toArray());
         }
 
-        // TODO: Does it matter to return an error saying "user is not a member of this group"? It doesn't do anything regardless.
         return PResponse::serverErr('Error updating group member.');
     }
 
