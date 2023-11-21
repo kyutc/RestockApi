@@ -86,12 +86,14 @@ curl http://api.cpsc4900.local/api/v1/user/{user_id} \
 ___
 # GroupController
 #### Create Group
+```
 curl http://api.cpsc4900.local/api/v1/group \
 -H "Accept: application/json" \
 -H "X-RestockApiToken: anything" \
 -H "X-RestockUserApiToken: {token}" \
 -d "name={group_name}" \
 && echo
+```
 
 #### Get Group Details
 ```
@@ -134,7 +136,7 @@ curl http://api.cpsc4900.local/api/v1/group/{group_id}/member/{user_id} \
 && echo
 ```
 
-#### Update Group Member
+#### Delete Group Member
 ```
 curl http://api.cpsc4900.local/api/v1/group/{group_id}/member/{user_id} \
 -X "DELETE" \
