@@ -27,7 +27,7 @@ class Invite
     public function __construct(Group $group)
     {
         $this->group = $group;
-        $this->code = base64_encode(random_bytes(18));
+        $this->code = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode(random_bytes(18)));
         $this->created_at = new \DateTimeImmutable('now');
     }
 
