@@ -463,10 +463,15 @@ class GroupController
 
         if ($user_id == $user->getId()) {
             // User is removing themself from the group
+            if ($this_group_member->getRole() === GroupMember::OWNER) {
+                // Owner cannot remove themselves
+                return PResponse::forbidden('Owners cannot remove themselves from the group.');
+            }
+
             try {
                 $this->entityManager->remove($this_group_member);
                 $this->entityManager->flush();
-                return PResponse::ok();
+                return PResponse::ok(["You have been removed from the group."]);
             } catch (ORMException) {
                 return PResponse::serverErr('Failed to update database.');
             }
