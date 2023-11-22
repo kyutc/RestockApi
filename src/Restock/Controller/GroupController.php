@@ -471,7 +471,7 @@ class GroupController
             try {
                 $this->entityManager->remove($this_group_member);
                 $this->entityManager->flush();
-                return PResponse::ok(["You have been removed from the group."]);
+                return PResponse::ok();
             } catch (ORMException) {
                 return PResponse::serverErr('Failed to update database.');
             }
