@@ -89,6 +89,21 @@ class GroupMember
         return $this;
     }
 
+    public function isHigherRoleThan(GroupMember $group_member): bool {
+        $quantifyRole = function (string $role): int {
+            // Lower indices are superior to greater indices
+            $roles = [
+                self::OWNER,
+                self::ADMIN,
+                self::MEMBER
+            ];
+            return array_search($role, $roles);
+        };
+        $this_member = $quantifyRole($this->getRole());
+        $that_member = $quantifyRole($group_member->getRole());
+        return $this_member < $that_member;
+    }
+
     public function toArray(): array {
         return [
             "id" => $this->getId(),

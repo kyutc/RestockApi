@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Restock\Controller;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Exception\ORMException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Restock\Entity\ActionLog;
@@ -333,6 +334,32 @@ class GroupController
         return PResponse::created($group_member->toArray());
     }
 
+    /**
+     * Change group member's role or set new owner
+     *
+     * PUT /group/{group_id:number}/member/{user_id:number}
+     * Accept: application/json
+     * Content-Type: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     * Content:
+     *  {
+     *      "role": "my new group's name!",
+     *  }
+     *
+     * Response body:
+     * {
+     *   "id": "2",
+     *   "name" "Buttery"
+     * }
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
     public function updateGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
@@ -341,173 +368,135 @@ class GroupController
         $new_role = $data['role'] ?? '';
         $user = $this->user;
 
-        /** @var GroupMember $group_member */
-
-        $group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
-            ['group' => $group_id, 'user' => $user_id]
-        );
-
-        $role = $user->getMemberDetails()->findFirst(
-            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
-        )?->getRole() ?? '';
-
-        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(
-            ['id' => $group_id]
-        );
-
-        if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
-            return PResponse::badRequest('Required parameter missing.');
-        }
-
-        if ($group === null) {
-            return PResponse::forbidden('Invalid group ID or group does not exist.');
-        }
-
         // This is a "fix" to prevent an owner from demoting themselves and thus breaking the group.
         if ($user->getId() == $user_id) {
             return PResponse::badRequest('You cannot change your own group role.');
         }
 
-        if ($new_role == GroupMember::OWNER) {
-            // Only the current owner can assign a new owner
-            if ($role !== GroupMember::OWNER) {
-                return PResponse::forbidden('You do not have permission to assign a different owner.');
-            }
-
-            // Demote the current owner to a member
-            $currentOwner = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
-                ['group' => $group_id, 'role' => GroupMember::OWNER]
-            );
-
-            if ($currentOwner) {
-                try {
-                    $currentOwner->setRole(GroupMember::MEMBER);
-                    $this->entityManager->persist($currentOwner);
-                    $this->entityManager->flush($currentOwner);
-                } catch (\InvalidArgumentException) {
-                    return PResponse::badRequest('Invalid role for group member.');
-                }
-            }
+        if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
+            return PResponse::badRequest('Required parameter missing.');
         }
 
-        if (!$group_member) {
-            // User is not a member of this group
+        /** @var GroupMember $this_group_member - the group member making changes */
+        $this_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+            ['group' => $group_id, 'user' => $user->getId()]
+        );
+        if (!$this_group_member) {
             return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
-        /*        Testing: Changed member id to something that dne
-        curl http://api.cpsc4900.local/api/v1/group/1/member/9 -X "PUT" -H "Accept: application/json" -H "X-RestockApiToken: anything" -H "X-RestockUserApiToken: n++kR2ATDm7l/CV+jWuyBVP/030tgtff/Ak03iWQnT8=" -d '{"role":"member"}' && echo
-        {"result":"error","message":"You are not a member of this group, or the group does not exist."}
-        */
 
-        if ($role == GroupMember::MEMBER) {
-            return PResponse::forbidden('You do not have permission to modify this group.');
+        /** @var GroupMember $that_group_member - the group member being changed */
+        $that_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+            ['group' => $group_id, 'user' => $user_id]
+        );
+        if (!$that_group_member) {
+            // User is not a member of this group
+            return PResponse::forbidden('Target is not a member of this group, or the group does not exist.');
         }
 
         // Ensure the user can only change the role of users with a lesser role
-        if ($new_role != '' && $group_member->getRole() >= $role) {
+        if (!$this_group_member->isHigherRoleThan($that_group_member)) {
             return PResponse::forbidden('You do not have permission to assign this role.');
         }
 
-        if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
-            ['group' => $group_id, 'user' => $user_id]
-        )) {
-            try {
-                $group_member->setRole($new_role);
-            } catch (\InvalidArgumentException) {
-                return PResponse::badRequest('Invalid role for group member.');
+        try {
+            $that_group_member->setRole($new_role);
+            if ($that_group_member->getRole() == GroupMember::OWNER) {
+                // Only the current owner can assign a new owner
+                if ($this_group_member->getRole() !== GroupMember::OWNER) {
+                    return PResponse::forbidden('You do not have permission to assign a different owner.');
+                }
+
+                // Demote the current owner to a member
+                try {
+                    $this_group_member->setRole(GroupMember::MEMBER);
+                    $this->entityManager->persist($this_group_member);
+                } catch (ORMException) {
+                    return PResponse::serverErr('Failed to update database.');
+                }
             }
-
-            $this->entityManager->persist($group_member);
-            $this->entityManager->flush($group_member);
-
-            return PResponse::ok($group_member->toArray());
+        } catch (\InvalidArgumentException) {
+            return PResponse::badRequest('Invalid role for group member.');
         }
 
-        return PResponse::serverErr('Error updating group member.');
+        try {
+            $this->entityManager->persist($that_group_member);
+            $this->entityManager->flush();
+            return PResponse::ok($that_group_member->toArray());
+        } catch (ORMException $e) {
+            return PResponse::serverErr('Error updating group member.');
+        }
     }
 
+    /**
+     * Delete a user from a group.
+     *
+     *  DELETE /group/{group_id:number}/member/{user_id:number}
+     *  Accept: application/json
+     *  X-RestockApiToken: anything
+     *  X-RestockUserApiToken: {token}
+     *
+     * @param ServerRequestInterface $request
+     * @param array $args
+     * @return ResponseInterface
+     * @throws \Doctrine\ORM\Exception\NotSupported
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
     public function deleteGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
     {
         $group_id = $args['group_id'] ?? '';
         $user_id = $args['user_id'] ?? '';
         $user = $this->user;
 
-
-        /** @var GroupMember $group_member */
-
-        $group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
-            ['group' => $group_id, 'user' => $user_id]
-        );
-
-        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(
-            ['id' => $group_id]
-        );
-
         if (empty($group_id) || empty($user_id)) {
             return PResponse::badRequest('Required parameter missing.');
         }
 
-        if ($group_member === null) {
-            return PResponse::forbidden('Invalid user ID or user not found in the group.');
-        }
-
-       // if ($user->getId() == $user_id) {
-       //     return PResponse::forbidden('You cannot remove yourself from the group.');
-       // }
-
-        $role = $user->getMemberDetails()->findFirst(
-            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
-        )?->getRole() ?? '';
-
-        if ($role == '') {
+        /** @var GroupMember $this_group_member - the group member making changes */
+        $this_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+            ['group' => $group_id, 'user' => $user->getId()]
+        );
+        if (!$this_group_member) {
             return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        $group_name = $group->getName();
-
-        if ($role == GroupMember::MEMBER) {
-            // Member removing themselves is allowed
-            if ($user->getId() == $user_id) {
-                $this->entityManager->remove($group_member);
-                $this->entityManager->flush($group_member);
-                return PResponse::ok(["You have been removed from $group_name."]);
-            } else {
-                return PResponse::forbidden('You do not have permission to remove members from this group.');
+        if ($user_id == $user->getId()) {
+            // User is removing themself from the group
+            try {
+                $this->entityManager->remove($this_group_member);
+                $this->entityManager->flush();
+                return PResponse::ok();
+            } catch (ORMException) {
+                return PResponse::serverErr('Failed to update database.');
             }
         }
 
-        // Check if the group has multiple members before allowing removal
-        $groupMembersCount = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->count(
-            ['group' => $group_id]
+        /** @var GroupMember $that_group_member - the group member being changed */
+        $that_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
+            ['group' => $group_id, 'user' => $user_id]
         );
+        if (!$that_group_member) {
+            // User is not a member of this group
+            return PResponse::forbidden('Target is not a member of this group, or the group does not exist.');
+        }
 
-        if ($groupMembersCount <= 1) {
-            return PResponse::forbidden('A group cannot be made ownerless. Transfer ownership before removal.');
+        if ($this_group_member->getRole() != GroupMember::OWNER) {
+            return PResponse::forbidden('You do not have permission to remove members from this group.');
         }
 
         // Ensure the user can only delete users with a lesser role
-        if ($group_member->getRole() >= $role && $user->getId() != $user_id) {
+        if (!$this_group_member->isHigherRoleThan($that_group_member)) {
             return PResponse::forbidden('You do not have permission to remove this member.');
         }
 
-        // Owner cannot remove themselves
-        if ($role == GroupMember::OWNER && $user->getId() == $user_id) {
-            return PResponse::forbidden('You cannot remove yourself from the group as the owner.');
+        try {
+            $this->entityManager->remove($that_group_member);
+            $this->entityManager->flush($that_group_member);
+            return PResponse::ok();
+        } catch (ORMException) {
+            return PResponse::serverErr('Error removing member from group.');
         }
-
-        if ($group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
-            ['group' => $group_id, 'user' => $user_id]
-        )) {
-            $group_name = $group->getName();
-            $user_name = $group_member->getUser()->getName();
-
-            $this->entityManager->remove($group_member);
-            $this->entityManager->flush($group_member);
-
-            return PResponse::ok(["$user_name has been removed from $group_name."]);
-        }
-
-        return PResponse::serverErr('Error removing member from group.');
     }
 
     public function getGroupMembers(ServerRequestInterface $request, array $args): ResponseInterface
