@@ -93,25 +93,20 @@ class UserController
         // TODO: Rate limiting and captcha.
         // TODO: Use tools instead of manually checking user input and creating errors
 
-        $username = $request->getParsedBody()['username'];
-        $password = $request->getParsedBody()['password'];
-        $email = $request->getParsedBody()['email'];
-
-        // Consider: mb_strlen and is varchar/other data type multibyte aware in db?
-        // TODO: Limit charset of username to A-Z, a-z, 0-9, -, _
-        if (!is_string($username) || strlen($username) < 3 || strlen($username) > 30) {
-            return PResponse::badRequest('Username must be between 3 and 30 characters.');
-        }
+        $username = $request->getParsedBody()['username'] ?? '';
+        $password = $request->getParsedBody()['password'] ?? '';
+        $email = $request->getParsedBody()['email'] ?? '';
 
         if ($this->entityManager->getRepository('Restock\Entity\User')->findBy(['email' => $email])) {
             return PResponse::badRequest('Email is already in use.');
         }
 
-        if (!is_string($password) || strlen($password) < 8) {
-            return PResponse::badRequest('Password must be 8 or more characters.');
+        try {
+            $user = new User($username, $password, $email);
+        } catch (\Restock\Entity\Exception\UserException $e) {
+            return \Restock\PResponse::badRequest($e->getMessage());
         }
 
-        $user = new User($username, $password, $email);
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
@@ -258,7 +253,10 @@ class UserController
             $groupMemberships = $user->getMemberDetails();
             foreach ($groupMemberships as $groupMembership) {
                 $group = $groupMembership->getGroup();
-                $actionLogger->createActionLog($group, 'Username changed from ' . $old_username . ' to ' . $new_username);
+                $actionLogger->createActionLog(
+                    $group,
+                    'Username changed from ' . $old_username . ' to ' . $new_username
+                );
             }
         }
 
