@@ -15,9 +15,9 @@
     "autoload": {
         "psr-4": {
             "Restock\\Middleware\\Auth\\":  "src/Restock/Middleware/Auth",
-            "Restock\\Db\\":  "src/",
             "Restock\\Controller\\": "src/Restock/Controller/",
             "Restock\\Entity\\": "src/Restock/Entity",
+            "Restock\\Entity\\Exception\\": "src/Restock/Entity/Exception",
             "Restock\\": "src/Restock"
         }
     },

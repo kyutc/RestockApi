@@ -5,6 +5,10 @@ namespace Restock\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Restock\Entity\Exception\User\InvalidEmailFormatException;
+use Restock\Entity\Exception\User\InvalidPasswordLengthException;
+use Restock\Entity\Exception\User\InvalidUsernameCharacterException;
+use Restock\Entity\Exception\User\InvalidUsernameLengthException;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'user', schema: 'restock')]
@@ -30,7 +34,10 @@ class User
     ], orphanRemoval: true)]
     private Collection $sessions;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: GroupMember::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: GroupMember::class, cascade: [
+        'persist',
+        'remove'
+    ], orphanRemoval: true)]
     private Collection $member_details;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Recipe::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
@@ -41,12 +48,16 @@ class User
      * @param string $name
      * @param string $password
      * @param string $email
+     * @throws InvalidEmailFormatException
+     * @throws InvalidPasswordLengthException
+     * @throws InvalidUsernameCharacterException
+     * @throws InvalidUsernameLengthException
      */
     public function __construct(string $name, string $password, string $email)
     {
-        $this->name = $name;
-        $this->password = $this->createPasswordHash($password);
-        $this->email = $email;
+        $this->setName($name);
+        $this->setPassword($password);
+        $this->setEmail($email);
         $this->sessions = new ArrayCollection();
         $this->member_details = new ArrayCollection();
         $this->recipes = new ArrayCollection();
@@ -64,6 +75,16 @@ class User
 
     public function setName(string $name): self
     {
+        if (strlen($name) < 3 || strlen($name) > 30) {
+            throw new Exception\User\InvalidUsernameLengthException("Username must be between 3 and 30 characters.");
+        }
+
+        if (preg_match('/[^a-zA-Z0-9_\-]+/', $name) > 0) {
+            throw new Exception\User\InvalidUsernameCharacterException(
+                "Username must contain only letters (a-z, A-Z), numbers (0-9), dashes, (-), and underscores (_)."
+            );
+        }
+
         $this->name = $name;
         return $this;
     }
@@ -85,6 +106,10 @@ class User
 
     public function setPassword(string $password): self
     {
+        if (strlen($password) < 8) {
+            throw new Exception\User\InvalidPasswordLengthException("Password must be longer than 8 characters.");
+        }
+
         $this->password = $this->createPasswordHash($password);
         return $this;
     }
@@ -96,6 +121,11 @@ class User
 
     public function setEmail(string $email): self
     {
+        // Note: this is not "correct" but it's correct enough without accidentally filtering out completely valid emails in unexpected formats.
+        if (preg_match('/.+@.+/', $email) !== 1) {
+            throw new Exception\User\InvalidEmailFormatException("Invalid email address.");
+        }
+
         $this->email = $email;
         return $this;
     }
@@ -156,7 +186,8 @@ class User
         return new Group($groupName, $this);
     }
 
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return [
             "id" => $this->getId(),
             "name" => $this->name
