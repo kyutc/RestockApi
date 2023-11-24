@@ -37,9 +37,10 @@ switch ($data['repository']['full_name']) {
         }
         break;
     case 'kyutc/RestockApi':
-        exec('../src/Webhook/deploy-frontend.sh 2>&1', $output, $code);
+        exec('../src/Webhook/deploy-backend.sh 2>&1', $output, $code);
         if ($code != 0) {
             http_response_code(500);
+            print_r($output);
             die();
         }
         break;
