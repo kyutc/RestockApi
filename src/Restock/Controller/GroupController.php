@@ -291,6 +291,7 @@ class GroupController
 
     public function addGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $group_id = $args['group_id'] ?? '';
         $user_id = $request->getParsedBody()['user_id'] ?? '';
         $new_role = $request->getParsedBody()['role'] ?? '';
@@ -326,6 +327,7 @@ class GroupController
         try {
             $this->entityManager->persist($group_member);
             $this->entityManager->flush($group_member);
+            $actionLogger->createActionLog($group, $user->getName() . ' added ' . $adding_user->getName() . ' to the group');
         } catch (\InvalidArgumentException) {
             // TODO: Generic exception should ideally be replaced with a specific one to catch for this situation
             return PResponse::badRequest('Invalid role for user.');
@@ -362,6 +364,7 @@ class GroupController
      */
     public function updateGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $group_id = $args['group_id'] ?? '';
         $user_id = $args['user_id'] ?? '';
         $data = json_decode($request->getBody()->getContents(), true);
@@ -422,6 +425,14 @@ class GroupController
         try {
             $this->entityManager->persist($that_group_member);
             $this->entityManager->flush();
+            $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
+            if ($new_role == GroupMember::OWNER) {
+                //When change in ownership occurs
+                $actionLogger->createActionLog($group, $that_group_member->getUser()->getName() . ' is now the owner of group ' . $group->getName());
+            } else {
+                //User is assigned a new role
+                $actionLogger->createActionLog($group, $user->getName() . ' assigned ' . $new_role . ' role to ' . $that_group_member->getUser()->getName());
+            }
             return PResponse::ok($that_group_member->toArray());
         } catch (ORMException $e) {
             return PResponse::serverErr('Error updating group member.');
@@ -445,6 +456,7 @@ class GroupController
      */
     public function deleteGroupMember(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $group_id = $args['group_id'] ?? '';
         $user_id = $args['user_id'] ?? '';
         $user = $this->user;
@@ -498,6 +510,14 @@ class GroupController
         try {
             $this->entityManager->remove($that_group_member);
             $this->entityManager->flush($that_group_member);
+            $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
+            if ($user_id == $user->getId()) {
+                // User is removing themselves from the group
+                $actionLogger->createActionLog($group, $user->getName() . ' left the group');
+            } else {
+                // User is getting kicked by someone else
+                $actionLogger->createActionLog($group, $user->getName() . ' removed ' . $that_group_member->getUser()->getName() . ' from the group');
+            }
             return PResponse::ok();
         } catch (ORMException) {
             return PResponse::serverErr('Error removing member from group.');
@@ -759,6 +779,7 @@ class GroupController
      */
     public function acceptGroupInvite(ServerRequestInterface $request, array $args): ResponseInterface
     {
+        $actionLogger = new ActionLogger($this->entityManager);
         $code = $args['code'] ?? '';
 
         /** @var Invite $invite */
@@ -775,6 +796,7 @@ class GroupController
         $this->entityManager->persist($group_member);
         $this->entityManager->remove($invite);
         $this->entityManager->flush();
+        $actionLogger->createActionLog($group, $this->user->getName() . ' has joined the group');
 
         return PResponse::created($group_member->toArray());
     }
