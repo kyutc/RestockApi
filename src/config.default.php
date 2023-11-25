@@ -7,3 +7,4 @@ $config['database']['username'] = 'restock';
 $config['database']['password'] = '';
 $config['database']['database'] = 'restock';
 $config['database']['host'] = 'localhost';
+$config['github']['webhook']['secret'] = '';
