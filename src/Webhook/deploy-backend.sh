@@ -8,7 +8,7 @@ source ~/.bashrc
 source ~/.profile
 
 cd ~/RestockApi
-git checkout dev-deployment
+git checkout master
 git pull
 
 rm -fr /var/www/api.pantrysync.pro/v1/!(vendor)
