@@ -21,6 +21,7 @@ class GroupController
 {
     private EntityManager $entityManager;
     private User $user;
+    private const MaxGroupNameLength = 100;
 
     public function __construct(EntityManager $entityManager, User $user)
     {
@@ -207,6 +208,9 @@ class GroupController
 
         if (empty($group_id) || empty($name) || !is_string($name)) {
             return PResponse::badRequest('Required parameter missing.');
+        }
+        if (strlen($name) > self::MaxGroupNameLength) {
+            return PResponse::badRequest('Group name is too long.');
         }
 
         $user = $this->user;
