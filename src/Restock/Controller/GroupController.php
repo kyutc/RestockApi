@@ -205,17 +205,17 @@ class GroupController
         $data = json_decode($request->getBody()->getContents(), true);
         $name = $data['name'] ?? '';
 
-        if (strlen($name) > 100 ) {
-            return Presponse::badRequest('Group name is too long.');
-        }
-        if (empty($group_id)) {
-            return PResponse::badRequest('Required parameter missing.');
-        }
-        if (empty($name)) {
+        if ($name === '') {
             return PResponse::badRequest('Group name must not be empty.');
         }
         if (!is_string($name)) {
             return PResponse::badRequest('Group name must be a string.');
+        }
+        if (strlen($name) > 100 ) {
+            return Presponse::badRequest('Group name is too long.');
+        }
+        if ($group_id === '') {
+            return PResponse::badRequest('Required parameter missing.');
         }
 
         $user = $this->user;
