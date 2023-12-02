@@ -215,7 +215,7 @@ class GroupController
             return PResponse::badRequest('Group name must be a string.');
         }
         if (strlen($name) > 100 ) {
-            return Presponse::badRequest('Group name is too long.');
+            return PResponse::badRequest('Group name is too long.');
         }
 
         $user = $this->user;
