@@ -165,14 +165,14 @@ class ItemController
         }
 
         // Update item properties here...
-        if (isset($data['name'])) $item->setName($data['name']);
-        if (isset($data['description'])) $item->setDescription($data['description']);
-        if (isset($data['category'])) $item->setCategory($data['category']);
-        if (isset($data['pantry_quantity'])) $item->setPantryQuantity(intval($data['pantry_quantity']));
-        if (isset($data['minimum_threshold'])) $item->setMinimumThreshold(intval($data['minimum_threshold']));
-        if (isset($data['auto_add_to_shopping_list'])) $item->setAutoAddToShoppingList(boolval($data['auto_add_to_shopping_list']));
-        if (isset($data['shopping_list_quantity'])) $item->setShoppingListQuantity(intval($data['shopping_list_quantity']));
-        if (isset($data['auto_add_to_pantry'])) $item->setDontAddToPantryOnPurchase(boolval($data['auto_add_to_pantry']));
+        $item->setName($data['name'] ?? $item->getName());
+        $item->setDescription($data['description'] ?? $item->getDescription());
+        $item->setCategory($data['category'] ?? $item->getCategory());
+        $item->setPantryQuantity(intval($data['pantry_quantity'] ?? $item->getPantryQuantity()));
+        $item->setMinimumThreshold(intval($data['minimum_threshold'] ?? $item->getMinimumThreshold()));
+        $item->setAutoAddToShoppingList(boolval($data['auto_add_to_shopping_list'] ?? $item->isAutoAddToShoppingList()));
+        $item->setShoppingListQuantity(intval($data['shopping_list_quantity'] ?? $item->getShoppingListQuantity()));
+        $item->setDontAddToPantryOnPurchase(boolval($data['auto_add_to_pantry'] ?? $item->isDontAddToPantryOnPurchase()));
 
         $entityManager->persist($item);
         $entityManager->flush();
