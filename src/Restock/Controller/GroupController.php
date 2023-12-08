@@ -214,7 +214,7 @@ class GroupController
         if (!is_string($name)) {
             return PResponse::badRequest('Group name must be a string.');
         }
-        if (strlen($name) > 100 ) {
+        if (strlen($name) > 100) {
             return PResponse::badRequest('Group name is too long.');
         }
 
@@ -336,7 +336,10 @@ class GroupController
         try {
             $this->entityManager->persist($group_member);
             $this->entityManager->flush($group_member);
-            $actionLogger->createActionLog($group, $user->getName() . ' added ' . $adding_user->getName() . ' to the group');
+            $actionLogger->createActionLog(
+                $group,
+                $user->getName() . ' added ' . $adding_user->getName() . ' to the group'
+            );
         } catch (\InvalidArgumentException) {
             // TODO: Generic exception should ideally be replaced with a specific one to catch for this situation
             return PResponse::badRequest('Invalid role for user.');
@@ -437,10 +440,16 @@ class GroupController
             $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
             if ($new_role == GroupMember::OWNER) {
                 //When change in ownership occurs
-                $actionLogger->createActionLog($group, $that_group_member->getUser()->getName() . ' is now the owner of group ' . $group->getName());
+                $actionLogger->createActionLog(
+                    $group,
+                    $that_group_member->getUser()->getName() . ' is now the owner of group ' . $group->getName()
+                );
             } else {
                 //User is assigned a new role
-                $actionLogger->createActionLog($group, $user->getName() . ' assigned ' . $new_role . ' role to ' . $that_group_member->getUser()->getName());
+                $actionLogger->createActionLog(
+                    $group,
+                    $user->getName() . ' assigned ' . $new_role . ' role to ' . $that_group_member->getUser()->getName()
+                );
             }
             return PResponse::ok($that_group_member->toArray());
         } catch (ORMException $e) {
@@ -525,7 +534,10 @@ class GroupController
                 $actionLogger->createActionLog($group, $user->getName() . ' left the group');
             } else {
                 // User is getting kicked by someone else
-                $actionLogger->createActionLog($group, $user->getName() . ' removed ' . $that_group_member->getUser()->getName() . ' from the group');
+                $actionLogger->createActionLog(
+                    $group,
+                    $user->getName() . ' removed ' . $that_group_member->getUser()->getName() . ' from the group'
+                );
             }
             return PResponse::ok();
         } catch (ORMException) {
@@ -574,6 +586,54 @@ class GroupController
         }
 
         return PResponse::ok($group->getGroupMembers()->toArray());
+    }
+
+    /**
+     * Fetch group's history.
+     *
+     * GET /group/{group_id:number}/history
+     * Accept: application/json
+     * X-RestockApiToken: anything
+     * X-RestockUserApiToken: {token}
+     *
+     * Response:
+     * [
+     *   "id": "102",
+     *   "group_id": "2",
+     *   "log_message": "Group The Pantry Room created.",
+     *   "timestamp": "1702926334"
+     * ]
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws \Exception
+     */
+    public function getGroupActionLogs(ServerRequestInterface $request, array $args): ResponseInterface
+    {
+        $group_id = $args['group_id'] ?? '';
+
+        if (empty($group_id)) {
+            return PResponse::badRequest('Required parameter missing.');
+        }
+
+        $user = $this->user;
+
+        $role = $user->getMemberDetails()->findFirst(
+            fn($_, GroupMember $group_member) => $group_member->getGroup()->getId() == $group_id
+        )?->getRole() ?? '';
+
+        if ($role == '') {
+            PResponse::forbidden('You do not have permission to view this group, or the group does not exist.');
+        }
+        /** @var Group $group */
+        $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
+
+        return PResponse::ok(
+            array_map(
+                fn(ActionLog $actionLog): array => $actionLog->toArray(),
+                $group->getHistory()->toArray()
+            )
+        );
     }
 
     /**
