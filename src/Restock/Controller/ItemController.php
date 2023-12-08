@@ -172,7 +172,7 @@ class ItemController
         $item->setMinimumThreshold(intval($data['minimum_threshold'] ?? $item->getMinimumThreshold()));
         $item->setAutoAddToShoppingList(boolval($data['auto_add_to_shopping_list'] ?? $item->isAutoAddToShoppingList()));
         $item->setShoppingListQuantity(intval($data['shopping_list_quantity'] ?? $item->getShoppingListQuantity()));
-        $item->setAddToPantryOnPurchase(boolval($data['auto_add_to_pantry'] ?? $item->isAddToPantryOnPurchase()));
+        $item->setAddToPantryOnPurchase(boolval($data['add_to_pantry_on_purchase'] ?? $item->isAddToPantryOnPurchase()));
 
         $entityManager->persist($item);
         $entityManager->flush();
