@@ -120,7 +120,7 @@ class Group
         int $minimum_threshold = 0,
         bool $auto_add_to_shopping_list = true,
         int $shopping_list_quantity = 0,
-        bool $dont_add_to_pantry_on_purchase = false
+        bool $add_to_pantry_on_purchase = false
     ): Item {
         $newItem = new Item(
             $this,
@@ -131,7 +131,7 @@ class Group
             $minimum_threshold,
             $auto_add_to_shopping_list,
             $shopping_list_quantity,
-            $dont_add_to_pantry_on_purchase
+            $add_to_pantry_on_purchase
         );
         $this->items->add($newItem);
         return $newItem;

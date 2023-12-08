@@ -42,7 +42,7 @@ class ItemController
      *  minimum_threshold={quantity}
      *  auto_add_to_shopping_list={boolean}
      *  shopping_list_quantity={quantity}
-     *  dont_add_to_pantry_on_purchase={boolean}
+     *  add_to_pantry_on_purchase={boolean}
      *
      * Response:
      * {
@@ -55,7 +55,7 @@ class ItemController
      *  "minimum_threshold": "40",
      *  "auto_add_to_shopping_list": "true",
      *  "shopping_list_quantity": "0",
-     *  "dont_add_to_pantry_on_purchase": "false"
+     *  "add_to_pantry_on_purchase": "false"
      * }
      *
      * @param ServerRequestInterface $request
@@ -89,7 +89,7 @@ class ItemController
             intval($data['minimum_threshold']),
             boolval($data['auto_add_to_shopping_list']),
             intval($data['shopping_list_quantity']),
-            boolval($data['dont_add_to_pantry_on_purchase'])
+            boolval($data['add_to_pantry_on_purchase'])
         );
 
 
@@ -118,7 +118,7 @@ class ItemController
      *      "minimum_threshold": "{quantity}",
      *      "auto_add_to_shopping_list": "{boolean}",
      *      "shopping_list_quantity": "{quantity}",
-     *      "dont_add_to_pantry_on_purchase": "{boolean}"
+     *      "add_to_pantry_on_purchase": "{boolean}"
      *  }
      *
      * Response:
@@ -132,7 +132,7 @@ class ItemController
      *   "minimum_threshold": "40",
      *   "auto_add_to_shopping_list": "true",
      *   "shopping_list_quantity": "0",
-     *   "dont_add_to_pantry_on_purchase": "false"
+     *   "add_to_pantry_on_purchase": "false"
      *  }
      *
      *
@@ -172,7 +172,7 @@ class ItemController
         $item->setMinimumThreshold(intval($data['minimum_threshold'] ?? $item->getMinimumThreshold()));
         $item->setAutoAddToShoppingList(boolval($data['auto_add_to_shopping_list'] ?? $item->isAutoAddToShoppingList()));
         $item->setShoppingListQuantity(intval($data['shopping_list_quantity'] ?? $item->getShoppingListQuantity()));
-        $item->setDontAddToPantryOnPurchase(boolval($data['auto_add_to_pantry'] ?? $item->isDontAddToPantryOnPurchase()));
+        $item->setAddToPantryOnPurchase(boolval($data['auto_add_to_pantry'] ?? $item->isAddToPantryOnPurchase()));
 
         $entityManager->persist($item);
         $entityManager->flush();

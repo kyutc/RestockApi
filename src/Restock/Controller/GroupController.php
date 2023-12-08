@@ -90,7 +90,7 @@ class GroupController
      *            "minimum_threshold": "40",
      *            "auto_add_to_shopping_list": "true",
      *            "shopping_list_quantity": "0",
-     *            "dont_add_to_pantry_on_purchase": "false"
+     *            "add_to_pantry_on_purchase": "false"
      *        },
      *        ...
      *    ],

@@ -40,7 +40,7 @@ class Item
     private int $shopping_list_quantity;
 
     #[ORM\Column]
-    private bool $dont_add_to_pantry_on_purchase;
+    private bool $add_to_pantry_on_purchase;
 
     public function __construct(
         Group $group,
@@ -51,7 +51,7 @@ class Item
         int $minimum_threshold = 0,
         bool $auto_add_to_shopping_list = true,
         int $shopping_list_quantity = 0,
-        bool $dont_add_to_pantry_on_purchase = false
+        bool $add_to_pantry_on_purchase = false
     ) {
         $this->group = $group;
         $this->name = $name;
@@ -61,7 +61,7 @@ class Item
         $this->minimum_threshold = $minimum_threshold;
         $this->auto_add_to_shopping_list = $auto_add_to_shopping_list;
         $this->shopping_list_quantity = $shopping_list_quantity;
-        $this->dont_add_to_pantry_on_purchase = $dont_add_to_pantry_on_purchase;
+        $this->add_to_pantry_on_purchase = $add_to_pantry_on_purchase;
     }
 
     public function toArray(): array {
@@ -75,7 +75,7 @@ class Item
             "minimum_threshold" => $this->getMinimumThreshold(),
             "auto_add_to_shopping_list" => $this->isAutoAddToShoppingList(),
             "shopping_list_quantity" => $this->getShoppingListQuantity(),
-            "dont_add_to_pantry_on_purchase" => $this->isDontAddToPantryOnPurchase()
+            "add_to_pantry_on_purchase" => $this->isAddToPantryOnPurchase()
         ];
     }
 
@@ -166,14 +166,14 @@ class Item
         return $this;
     }
 
-    public function isDontAddToPantryOnPurchase(): bool
+    public function isAddToPantryOnPurchase(): bool
     {
-        return $this->dont_add_to_pantry_on_purchase;
+        return $this->add_to_pantry_on_purchase;
     }
 
-    public function setDontAddToPantryOnPurchase(bool $dont_add_to_pantry_on_purchase): self
+    public function setAddToPantryOnPurchase(bool $add_to_pantry_on_purchase): self
     {
-        $this->dont_add_to_pantry_on_purchase = $dont_add_to_pantry_on_purchase;
+        $this->add_to_pantry_on_purchase = $add_to_pantry_on_purchase;
         return $this;
     }
 
@@ -190,7 +190,7 @@ class Item
             'minimum_threshold' => $this->getMinimumThreshold(),
             'auto_add_to_shopping_list' => $this->isAutoAddToShoppingList(),
             'shopping_list_quantity' => $this->getShoppingListQuantity(),
-            'auto_add_to_pantry' => $this->isDontAddToPantryOnPurchase(),
+            'auto_add_to_pantry' => $this->isAddToPantryOnPurchase(),
         ];
 
         return json_encode($itemData);
