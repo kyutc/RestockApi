@@ -108,6 +108,7 @@ class GroupMember
         return [
             "id" => $this->getId(),
             "group_id" => $this->getGroup()->getId(),
+            "user_id" => $this->getUser()->getId(),
             "name" => $this->getUser()->getName(),
             "role" => $this->getRole()
         ];
