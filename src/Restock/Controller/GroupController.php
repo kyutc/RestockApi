@@ -383,7 +383,7 @@ class GroupController
         $new_role = $data['role'] ?? '';
         $user = $this->user;
 
-        if (empty($group_id) || empty($group_member_id_id) || empty($new_role) || !is_string($new_role)) {
+        if (empty($group_id) || empty($group_member_id) || empty($new_role) || !is_string($new_role)) {
             return PResponse::badRequest('Required parameter missing.');
         }
 
@@ -477,7 +477,7 @@ class GroupController
         $group_member_id = $args['group_member_id'] ?? '';
         $user = $this->user;
 
-        if (empty($group_id) || empty($group_member_id_id)) {
+        if (empty($group_id) || empty($group_member_id)) {
             return PResponse::badRequest('Required parameter missing.');
         }
 
