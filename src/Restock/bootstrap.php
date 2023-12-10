@@ -199,19 +199,19 @@ $router->group('/api/v1', function (\League\Route\RouteGroup $route) {
     );
     $route->map(
         'GET',
-        '/group/{group_id:number}/member/{user_id:number}',
+        '/group/{group_id:number}/member/{group_member_id:number}',
         [Restock\Controller\GroupController::class, 'getGroupMemberDetails']
     );
     $route->map('POST', '/group/{group_id:number}/member', [Restock\Controller\GroupController::class, 'addGroupMember']
     );
     $route->map(
         'PUT',
-        '/group/{group_id:number}/member/{user_id:number}',
+        '/group/{group_id:number}/member/{group_member_id:number}',
         [Restock\Controller\GroupController::class, 'updateGroupMember']
     );
     $route->map(
         'DELETE',
-        '/group/{group_id:number}/member/{user_id:number}',
+        '/group/{group_id:number}/member/{group_member_id:number}',
         [Restock\Controller\GroupController::class, 'deleteGroupMember']
     );
 

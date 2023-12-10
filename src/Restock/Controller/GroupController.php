@@ -378,19 +378,15 @@ class GroupController
     {
         $actionLogger = new ActionLogger($this->entityManager);
         $group_id = $args['group_id'] ?? '';
-        $user_id = $args['user_id'] ?? '';
+        $group_member_id = $args['group_member_id'] ?? '';
         $data = json_decode($request->getBody()->getContents(), true);
         $new_role = $data['role'] ?? '';
         $user = $this->user;
 
-        // This is a "fix" to prevent an owner from demoting themselves and thus breaking the group.
-        if ($user->getId() == $user_id) {
-            return PResponse::badRequest('You cannot change your own group role.');
-        }
-
-        if (empty($group_id) || empty($user_id) || empty($new_role) || !is_string($new_role)) {
+        if (empty($group_id) || empty($group_member_id_id) || empty($new_role) || !is_string($new_role)) {
             return PResponse::badRequest('Required parameter missing.');
         }
+
 
         /** @var GroupMember $this_group_member - the group member making changes */
         $this_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
@@ -401,10 +397,12 @@ class GroupController
         }
 
         /** @var GroupMember $that_group_member - the group member being changed */
-        $that_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
-            ['group' => $group_id, 'user' => $user_id]
-        );
-        if (!$that_group_member) {
+        $that_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(['id' => $group_member_id]);
+        // This is a "fix" to prevent an owner from demoting themselves and thus breaking the group.
+        if ($this_group_member === $that_group_member) {
+            return PResponse::badRequest('You cannot change your own group role.');
+        }
+        if (!$that_group_member || $this_group_member->getGroup() !== $that_group_member->getGroup()) {
             // User is not a member of this group
             return PResponse::forbidden('Target is not a member of this group, or the group does not exist.');
         }
@@ -476,10 +474,10 @@ class GroupController
     {
         $actionLogger = new ActionLogger($this->entityManager);
         $group_id = $args['group_id'] ?? '';
-        $user_id = $args['user_id'] ?? '';
+        $group_member_id = $args['group_member_id'] ?? '';
         $user = $this->user;
 
-        if (empty($group_id) || empty($user_id)) {
+        if (empty($group_id) || empty($group_member_id_id)) {
             return PResponse::badRequest('Required parameter missing.');
         }
 
@@ -491,7 +489,14 @@ class GroupController
             return PResponse::forbidden('You are not a member of this group, or the group does not exist.');
         }
 
-        if ($user_id == $user->getId()) {
+        /** @var GroupMember $that_group_member - the group member being changed */
+        $that_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(['id' => $group_member_id]);
+        if (!$that_group_member || $this_group_member->getGroup() !== $that_group_member->getGroup()) {
+            // User is not a member of this group
+            return PResponse::forbidden('Target is not a member of this group, or the group does not exist.');
+        }
+
+        if ($this_group_member === $that_group_member) {
             // User is removing themself from the group
             if ($this_group_member->getRole() === GroupMember::OWNER) {
                 // Owner cannot remove themselves
@@ -501,19 +506,11 @@ class GroupController
             try {
                 $this->entityManager->remove($this_group_member);
                 $this->entityManager->flush();
+                $actionLogger->createActionLog($this_group_member->getGroup(), $this_group_member->getUser()->getName() . ' left the group');
                 return PResponse::ok();
             } catch (ORMException) {
                 return PResponse::serverErr('Failed to update database.');
             }
-        }
-
-        /** @var GroupMember $that_group_member - the group member being changed */
-        $that_group_member = $this->entityManager->getRepository('\Restock\Entity\GroupMember')->findOneBy(
-            ['group' => $group_id, 'user' => $user_id]
-        );
-        if (!$that_group_member) {
-            // User is not a member of this group
-            return PResponse::forbidden('Target is not a member of this group, or the group does not exist.');
         }
 
         if ($this_group_member->getRole() != GroupMember::OWNER) {
@@ -528,17 +525,11 @@ class GroupController
         try {
             $this->entityManager->remove($that_group_member);
             $this->entityManager->flush($that_group_member);
-            $group = $this->entityManager->getRepository('\Restock\Entity\Group')->findOneBy(['id' => $group_id]);
-            if ($user_id == $user->getId()) {
-                // User is removing themselves from the group
-                $actionLogger->createActionLog($group, $user->getName() . ' left the group');
-            } else {
-                // User is getting kicked by someone else
-                $actionLogger->createActionLog(
-                    $group,
-                    $user->getName() . ' removed ' . $that_group_member->getUser()->getName() . ' from the group'
-                );
-            }
+            // User is getting kicked by someone else
+            $actionLogger->createActionLog(
+                $this_group_member->getGroup(),
+                $this_group_member->getUser()->getName() . ' removed ' . $that_group_member->getUser()->getName() . ' from the group'
+            );
             return PResponse::ok();
         } catch (ORMException) {
             return PResponse::serverErr('Error removing member from group.');
